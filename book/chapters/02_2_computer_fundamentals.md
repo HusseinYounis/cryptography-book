@@ -688,7 +688,7 @@ Show your work in binary.
 ```
 
 ```{exercise}
-:label: bit-masking
+:label: bit-masking-exercise
 
 Given the byte `11010110`:
 1. Set bit 3 to 1

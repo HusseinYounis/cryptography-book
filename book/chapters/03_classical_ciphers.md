@@ -453,7 +453,7 @@ Encrypt "CRYPTOGRAPHY" using the Vigenère cipher with keyword "MATH".
 ```
 
 ```{exercise}
-:label: frequency-analysis
+:label: frequency-analysis-exercise
 Given a ciphertext, describe the step-by-step process you would use to perform frequency analysis.
 ```
 

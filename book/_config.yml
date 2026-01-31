@@ -24,9 +24,9 @@ only_build_toc_files: true
 html:
   favicon: figures/favicon.ico
   home_page_in_navbar: true
-  use_edit_page_button: true
-  use_issues_button: true
-  use_repository_button: true
+  use_edit_page_button: false
+  use_issues_button: false
+  use_repository_button: false
   extra_footer: ""
   baseurl: https://husseinyounis.github.io/cryptography-book/
   html_baseurl: https://husseinyounis.github.io/cryptography-book/
@@ -106,3 +106,4 @@ sphinx:
     tippy_enable_mathjax: true
     tippy_rtd_urls: []
     inverter_all: true
+

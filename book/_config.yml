@@ -75,6 +75,9 @@ sphinx:
         text: Introduction to Cryptography
     html_context:
       default_mode: light
+      github_user: HusseinYounis
+      github_repo: cryptography-book
+      github_version: main
     mathjax3_config:
       loader:
         load: ['[tex]/color']

@@ -31,7 +31,19 @@ Ciphertext: DWWDFN DW GDZQ
 
 ### Interactive Caesar Cipher Demo
 
-Try the Caesar cipher yourself! Modify the plaintext and key below, then click "Run" to see the encryption and decryption in action.
+Try the Caesar cipher yourself! 
+
+```{admonition} How to Make It Interactive
+:class: note
+To run this code interactively:
+1. Click the 🚀 rocket icon at the top of the page
+2. Select "Live Code" to activate the interactive mode
+3. Wait for the kernel to start (may take a few seconds)
+4. Modify the `plaintext` and `key` values in the code below
+5. Click the "run" button that appears above the code cell
+
+Alternatively, you can copy this code and run it in your own Python environment.
+```
 
 ```{code-cell} python
 :tags: [thebe-init]
@@ -85,12 +97,14 @@ def display_caesar_demo(plaintext, key):
     if plaintext.upper().replace(" ", "") == decrypted.replace(" ", ""):
         print("✅ Decryption successful! Original message recovered.")
     else:
-        print("❌ Decryption failed!")
-    print("="*60)
+  After activating Live Code (🚀 icon at top), experiment with:**
+- Change the `plaintext` to any message you want
+- Try different `key` values (0-25)
+- What happens with `key = 0`?
+- What happens with `key = 26`?
+- Try encrypting the ciphertext again with the same key!
 
-# Example usage - modify these values!
-plaintext = "ATTACK AT DAWN"
-key = 3
+**Or copy and run this code in your own Python environment!**
 
 display_caesar_demo(plaintext, key)
 ```

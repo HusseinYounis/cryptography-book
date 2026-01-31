@@ -29,6 +29,7 @@ html:
   use_repository_button: true
   extra_footer: ""
   baseurl: https://husseinyounis.github.io/cryptography-book/
+  html_baseurl: https://husseinyounis.github.io/cryptography-book/
   analytics:
     google_analytics_id: ""
   announcement: ""
@@ -88,7 +89,7 @@ sphinx:
     bibtex_bibfiles:
       - references.bib
     bibtex_reference_style: author_year
-    nb_render_priority:
+    nb_mime_priority_overrides:
       html:
         - "application/vnd.jupyter.widget-view+json"
         - "application/javascript"

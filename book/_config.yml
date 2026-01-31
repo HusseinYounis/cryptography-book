@@ -89,17 +89,6 @@ sphinx:
     bibtex_bibfiles:
       - references.bib
     bibtex_reference_style: author_year
-    nb_mime_priority_overrides:
-      html:
-        - "application/vnd.jupyter.widget-view+json"
-        - "application/javascript"
-        - "text/html"
-        - "image/svg+xml"
-        - "image/png"
-        - "image/jpeg"
-        - "text/markdown"
-        - "text/latex"
-        - "text/plain"
     thebe_config:
       repository_url: https://github.com/HusseinYounis/cryptography-book
       repository_branch: main

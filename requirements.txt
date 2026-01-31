@@ -1,4 +1,5 @@
 jupyter-book>=1.0.0
+teachbooks
 sphinx-book-theme>=1.0.0
 sphinx-proof
 sphinx-exercise

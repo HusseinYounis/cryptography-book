@@ -28,13 +28,13 @@ html:
   use_issues_button: true
   use_repository_button: true
   extra_footer: ""
-  baseurl: https://yourusername.github.io/cryptography-book/
+  baseurl: https://husseinyounis.github.io/cryptography-book/
   analytics:
     google_analytics_id: ""
   announcement: ""
 
 repository:
-  url: https://github.com/yourusername/cryptography-book
+  url: https://github.com/HusseinYounis/cryptography-book
   path_to_book: book
   branch: main
 
@@ -98,10 +98,11 @@ sphinx:
         - "text/latex"
         - "text/plain"
     thebe_config:
-      repository_url: https://github.com/yourusername/cryptography-book
+      repository_url: https://github.com/HusseinYounis/cryptography-book
       repository_branch: main
       path_to_book: book
       use_thebe_lite: true
+      use_jupyter_lite: true
     tippy_props:
       maxWidth: 600
       placement: "top"

@@ -5,8 +5,8 @@ parts:
   - caption: Getting Started
     chapters:
     - file: chapters/01_introduction.md
-    - file: chapters/02_mathematical_foundations.md
-    - file: chapters/02_5_computer_fundamentals.md
+    - file: chapters/02_1_mathematical_foundations.md
+    - file: chapters/02_2_computer_fundamentals.md
   
   - caption: Classical Cryptography
     chapters:

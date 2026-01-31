@@ -1,4 +1,4 @@
-# Computer Fundamentals for Cryptography
+# Chapter 2.2: Computer Fundamentals for Cryptography
 
 ## Introduction
 

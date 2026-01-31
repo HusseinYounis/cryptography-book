@@ -1,4 +1,4 @@
-# Chapter 2: Mathematical Foundations
+# Chapter 2.1: Mathematical Foundations
 
 ## Introduction
 

@@ -29,6 +29,124 @@ Plaintext:  ATTACK AT DAWN
 Ciphertext: DWWDFN DW GDZQ
 ```
 
+### Interactive Caesar Cipher Demo
+
+Try the Caesar cipher yourself! Modify the plaintext and key below, then click "Run" to see the encryption and decryption in action.
+
+```{code-cell} python
+:tags: [thebe-init]
+
+def caesar_encrypt(plaintext, key):
+    """Encrypt plaintext using Caesar cipher with given key."""
+    result = []
+    for char in plaintext.upper():
+        if char.isalpha():
+            # Shift character by key positions
+            shifted = chr((ord(char) - ord('A') + key) % 26 + ord('A'))
+            result.append(shifted)
+        else:
+            # Keep non-alphabetic characters unchanged
+            result.append(char)
+    return ''.join(result)
+
+def caesar_decrypt(ciphertext, key):
+    """Decrypt ciphertext using Caesar cipher with given key."""
+    # Decryption is encryption with negative key
+    return caesar_encrypt(ciphertext, -key)
+
+def display_caesar_demo(plaintext, key):
+    """Display Caesar cipher encryption/decryption demo."""
+    print("="*60)
+    print("         CAESAR CIPHER DEMONSTRATION")
+    print("="*60)
+    print(f"\n📝 Original Plaintext:  {plaintext}")
+    print(f"🔑 Shift Key:           {key}")
+    print("-"*60)
+    
+    # Encrypt
+    ciphertext = caesar_encrypt(plaintext, key)
+    print(f"🔒 Encrypted:           {ciphertext}")
+    
+    # Decrypt
+    decrypted = caesar_decrypt(ciphertext, key)
+    print(f"🔓 Decrypted:           {decrypted}")
+    print("="*60)
+    
+    # Show the shift mapping for first few letters
+    print("\n📊 Shift Mapping (first 10 letters):")
+    print("   Plaintext:  A B C D E F G H I J")
+    print("   Ciphertext: ", end="")
+    for char in "ABCDEFGHIJ":
+        encrypted = caesar_encrypt(char, key)
+        print(f"{encrypted} ", end="")
+    print("\n" + "="*60)
+    
+    # Verify
+    if plaintext.upper().replace(" ", "") == decrypted.replace(" ", ""):
+        print("✅ Decryption successful! Original message recovered.")
+    else:
+        print("❌ Decryption failed!")
+    print("="*60)
+
+# Example usage - modify these values!
+plaintext = "ATTACK AT DAWN"
+key = 3
+
+display_caesar_demo(plaintext, key)
+```
+
+```{admonition} Try It Yourself!
+:class: tip
+**Experiment with different values:**
+- Change the `plaintext` to any message you want
+- Try different `key` values (0-25)
+- What happens with `key = 0`?
+- What happens with `key = 26`?
+- Try encrypting the ciphertext again with the same key!
+```
+
+### Brute Force Attack Demo
+
+Since there are only 26 possible keys, we can try them all!
+
+```{code-cell} python
+:tags: [thebe-init]
+
+def caesar_brute_force(ciphertext):
+    """Try all possible Caesar cipher keys."""
+    print("="*70)
+    print("           CAESAR CIPHER BRUTE FORCE ATTACK")
+    print("="*70)
+    print(f"\n🎯 Ciphertext: {ciphertext}")
+    print("-"*70)
+    print("\nTrying all possible keys:\n")
+    
+    for key in range(26):
+        decrypted = caesar_decrypt(ciphertext, key)
+        # Highlight likely correct decryption (contains common words)
+        common_words = ['THE', 'AND', 'ATTACK', 'MESSAGE', 'HELLO', 'DAWN']
+        is_likely = any(word in decrypted for word in common_words)
+        marker = "⭐" if is_likely else "  "
+        
+        print(f"{marker} Key {key:2d}: {decrypted}")
+    
+    print("="*70)
+    print("⭐ = Likely correct decryption (contains common English words)")
+    print("="*70)
+
+# Try to crack this message!
+ciphertext = "DWWDFN DW GDZQ"
+caesar_brute_force(ciphertext)
+```
+
+```{admonition} Security Lesson
+:class: warning
+The Caesar cipher has only 26 possible keys, making it vulnerable to **brute force attack**. 
+An attacker can simply try all possibilities in seconds!
+
+**Key takeaway:** A cipher needs a sufficiently large key space to be secure.
+```
+
 **Security Analysis:**
 - **Key space:** Only 26 possible keys
 - **Vulnerability:** Trivial to break by brute force

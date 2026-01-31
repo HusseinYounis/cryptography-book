@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="#ffffff" opacity="0.1"/>
+  
+  <!-- Lock body -->
+  <rect x="70" y="100" width="60" height="50" rx="5" fill="#e0e0e0"/>
+  
+  <!-- Lock shackle -->
+  <path d="M 75 100 L 75 80 Q 75 60, 100 60 Q 125 60, 125 80 L 125 100" 
+        stroke="#e0e0e0" stroke-width="10" fill="none" stroke-linecap="round"/>
+  
+  <!-- Keyhole -->
+  <circle cx="100" cy="115" r="8" fill="#2c2c2c"/>
+  <rect x="96" y="115" width="8" height="20" fill="#2c2c2c"/>
+  
+  <!-- Binary pattern decoration -->
+  <text x="100" y="40" font-family="monospace" font-size="12" fill="#e0e0e0" text-anchor="middle" opacity="0.3">
+    01001100
+  </text>
+  <text x="100" y="180" font-family="monospace" font-size="12" fill="#e0e0e0" text-anchor="middle" opacity="0.3">
+    10110011
+  </text>
+</svg>

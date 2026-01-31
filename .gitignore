@@ -11,6 +11,7 @@ __pycache__/
 book/_build/
 _build/
 .jupyter_cache/
+*.pickle
 
 # Distribution / packaging
 .Python

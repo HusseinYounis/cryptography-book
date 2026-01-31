@@ -1,0 +1,33 @@
+format: jb-book
+root: intro.md
+
+parts:
+  - caption: Getting Started
+    chapters:
+    - file: chapters/01_introduction.md
+    - file: chapters/02_mathematical_foundations.md
+  
+  - caption: Classical Cryptography
+    chapters:
+    - file: chapters/03_classical_ciphers.md
+    - file: chapters/04_cryptanalysis_basics.md
+  
+  - caption: Modern Cryptography
+    chapters:
+    - file: chapters/05_symmetric_encryption.md
+    - file: chapters/06_block_ciphers.md
+    - file: chapters/07_public_key_cryptography.md
+    - file: chapters/08_rsa.md
+    - file: chapters/09_elliptic_curves.md
+  
+  - caption: Applications
+    chapters:
+    - file: chapters/10_hash_functions.md
+    - file: chapters/11_digital_signatures.md
+    - file: chapters/12_key_exchange.md
+    - file: chapters/13_practical_applications.ipynb
+  
+  - caption: Reference
+    chapters:
+    - file: references.md
+    - file: credits.md

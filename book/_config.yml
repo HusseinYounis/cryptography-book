@@ -1,0 +1,114 @@
+author: Introduction to Cryptography Course Team, built with <a href="https://teachbooks.io">TeachBooks</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="license noopener noreferrer"">CC BY 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt=""></a>
+copyright: "2026"
+title: Introduction to Cryptography
+
+execute:
+  execute_notebooks: "off"
+
+parse:
+  myst_enable_extensions:
+    - amsmath
+    - colon_fence
+    - deflist
+    - dollarmath
+    - html_admonition
+    - html_image
+    - linkify
+    - replacements
+    - smartquotes
+    - substitution
+  myst_url_schemes: [mailto, http, https]
+
+only_build_toc_files: true
+
+html:
+  favicon: figures/favicon.ico
+  home_page_in_navbar: true
+  use_edit_page_button: true
+  use_issues_button: true
+  use_repository_button: true
+  extra_footer: ""
+  baseurl: https://yourusername.github.io/cryptography-book/
+  analytics:
+    google_analytics_id: ""
+  announcement: ""
+
+repository:
+  url: https://github.com/yourusername/cryptography-book
+  path_to_book: book
+  branch: main
+
+launch_buttons:
+  notebook_interface: jupyterlab
+  binderhub_url: ""
+  colab_url: ""
+  thebe: true
+
+latex:
+  latex_documents:
+    targetname: book.tex
+
+sphinx:
+  extra_extensions:
+    - sphinx_proof
+    - sphinx_exercise
+    - sphinx_togglebutton
+    - sphinx_design
+    - sphinx_tippy
+    - sphinx_thebe
+    - sphinxcontrib.bibtex
+    - sphinx_named_colors
+    - sphinx_image_inverter
+    - sphinx_iframes
+    - teachbooks_sphinx_tippy
+    - indexed_definitions
+  config:
+    html_theme: sphinx_book_theme
+    html_theme_options:
+      navigation_with_keys: false
+      show_nav_level: 1
+      use_sidenotes: true
+      logo:
+        image_dark: figures/logo_dark.png
+        image_light: figures/logo_light.png
+        text: Introduction to Cryptography
+    html_context:
+      default_mode: light
+    mathjax3_config:
+      loader:
+        load: ['[tex]/color']
+      tex:
+        packages:
+          '[+]': ['color']
+        macros:
+          "orange": ['{{\\color{{orange}}{#1}}}', 1]
+          "red": ['{{\\color{{red}}{#1}}}', 1]
+          "blue": ['{{\\color{{blue}}{#1}}}', 1]
+          "green": ['{{\\color{{green}}{#1}}}', 1]
+    bibtex_bibfiles:
+      - references.bib
+    bibtex_reference_style: author_year
+    nb_render_priority:
+      html:
+        - "application/vnd.jupyter.widget-view+json"
+        - "application/javascript"
+        - "text/html"
+        - "image/svg+xml"
+        - "image/png"
+        - "image/jpeg"
+        - "text/markdown"
+        - "text/latex"
+        - "text/plain"
+    thebe_config:
+      repository_url: https://github.com/yourusername/cryptography-book
+      repository_branch: main
+      path_to_book: book
+      use_thebe_lite: true
+    tippy_props:
+      maxWidth: 600
+      placement: "top"
+      interactive: true
+      theme: "material"
+    tippy_enable_mathjax: true
+    tippy_rtd_urls: []
+    inverter_all: true

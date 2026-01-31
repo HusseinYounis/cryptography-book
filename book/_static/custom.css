@@ -1,0 +1,31 @@
+/* Custom CSS for cryptography book */
+
+/* Attribution admonition */
+div.attribution > .admonition-title::after {
+    content: "\f10d";
+}
+
+/* Code block styling */
+div.highlight {
+    border-left: 3px solid #0066cc;
+    padding-left: 1em;
+}
+
+/* Math styling */
+.math {
+    font-size: 1.1em;
+}
+
+/* Exercise boxes */
+.exercise {
+    border-left: 4px solid #28a745;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+/* Theorem boxes */
+.theorem {
+    border-left: 4px solid #6610f2;
+    padding: 1em;
+    margin: 1em 0;
+}

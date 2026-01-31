@@ -40,7 +40,7 @@ repository:
 
 launch_buttons:
   notebook_interface: jupyterlab
-  binderhub_url: ""
+  binderhub_url: "https://mybinder.org"
   colab_url: ""
   thebe: true
 
@@ -66,6 +66,8 @@ sphinx:
       navigation_with_keys: false
       show_nav_level: 1
       use_sidenotes: true
+      launch_buttons:
+        thebe: true
       logo:
         image_dark: figures/logo_dark.png
         image_light: figures/logo_light.png

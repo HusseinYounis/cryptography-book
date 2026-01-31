@@ -43,7 +43,7 @@ launch_buttons:
   notebook_interface: jupyterlab
   binderhub_url: "https://mybinder.org"
   colab_url: ""
-  thebe: true
+  thebe: false
 
 latex:
   latex_documents:
@@ -68,7 +68,7 @@ sphinx:
       show_nav_level: 1
       use_sidenotes: true
       launch_buttons:
-        thebe: true
+        thebe: false
       logo:
         image_dark: figures/logo_dark.png
         image_light: figures/logo_light.png

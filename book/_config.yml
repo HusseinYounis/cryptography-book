@@ -4,6 +4,9 @@ title: Introduction to Cryptography
 
 execute:
   execute_notebooks: "off"
+  exclude_patterns: []
+  timeout: 30
+  allow_errors: false
 
 parse:
   myst_enable_extensions:
@@ -17,67 +20,84 @@ parse:
     - replacements
     - smartquotes
     - substitution
+    - tasklist
   myst_url_schemes: [mailto, http, https]
+  myst_links_external_new_tab: true
+  myst_dmath_double_inline: true
 
 only_build_toc_files: true
 
 html:
-  favicon: figures/favicon.ico
-  home_page_in_navbar: true
-  use_edit_page_button: false
-  use_issues_button: false
-  use_repository_button: false
-  extra_footer: ""
-  baseurl: https://husseinyounis.github.io/cryptography-book/
-  html_baseurl: https://husseinyounis.github.io/cryptography-book/
-  analytics:
-    google_analytics_id: ""
-  announcement: ""
+  use_multitoc_numbering: true
 
 repository:
   url: https://github.com/HusseinYounis/cryptography-book
   path_to_book: book
   branch: main
 
-launch_buttons:
-  notebook_interface: jupyterlab
-  binderhub_url: "https://mybinder.org"
-  colab_url: ""
-  thebe: false
+bibtex_bibfiles:
+  - references.bib
 
 latex:
   latex_documents:
     targetname: book.tex
 
+teachbooks:
+  attribution_location: top
+  attribution_color: attributiongrey
+
 sphinx:
   extra_extensions:
-    - sphinx_proof
-    - sphinx_exercise
-    - sphinx_togglebutton
-    - sphinx_design
-    - sphinx_thebe
-    - sphinxcontrib.bibtex
-    - sphinx_named_colors
-    - sphinx_image_inverter
-    - sphinx_iframes
-    - teachbooks_sphinx_tippy
+    - teachbooks_favourites  # replaces all individual TeachBooks extensions
   config:
     html_theme: sphinx_book_theme
+    html_js_files:
+      - https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js
+    thebe_config:
+      use_thebe_lite: true
+      exclude_patterns: ["**/_*.yml", "**/*.md", "**/*.ipynb"]
+    html_favicon: "figures/favicon.ico"
+    html_baseurl: "https://husseinyounis.github.io/cryptography-book/"
     html_theme_options:
       navigation_with_keys: false
-      show_nav_level: 1
+      show_nav_level: 2
       use_sidenotes: true
       launch_buttons:
-        thebe: false
+        thebe: true
+      use_edit_page_button: true
+      use_repository_button: true
+      use_issues_button: true
+      announcement: ""
+      repository_url: "https://github.com/HusseinYounis/cryptography-book"
+      path_to_docs: "book"
+      repository_branch: "main"
       logo:
         image_dark: figures/logo_dark.png
         image_light: figures/logo_light.png
         text: Introduction to Cryptography
     html_context:
       default_mode: light
-      github_user: HusseinYounis
-      github_repo: cryptography-book
-      github_version: main
+    html_show_copyright: false
+    html_last_updated_fmt: ''
+    html_static_path: ["figures"]
+    mathjax3_config:
+      chtml:
+        mtextInheritFont: true
+    keep_warnings: false
+    external_toc_exclude_missing: true
+    inverter_all: true
+    iframe_blend: true
+    iframe_aspectratio: auto 2 / 1
+    hide_solutions: false
+    named_colors_custom_colors: {'attributiongrey':[150,150,150]}
+    git_untracked_check_dependencies: false
+    git_untracked_show_sourcelink: true
+    git_last_updated_timezone: 'UTC'
+    zoomies_selector: ".bd-article img"
+    zoomies_best_fit: 70
+    zoomies_toolbar: ["zoomIn", "zoomOut", "oneToOne", "reset"]
+    zoomies_invert_colors: false
+    zoomies_bg_apply_to_img: true
     mathjax3_config:
       loader:
         load: ['[tex]/color']

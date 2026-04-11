@@ -1,34 +1,53 @@
+# Configuration of _toc.yml:
+# https://jupyterbook.org/en/stable/structure/toc.html
+# https://sphinx-external-toc.readthedocs.io/en/latest/user_guide/sphinx.html
+
 format: jb-book
 root: intro.md
 
 parts:
   - caption: Getting Started
+    numbered: false
+    style: numerical
+    restart_numbering: false
     chapters:
     - file: chapters/01_introduction.md
     - file: chapters/02_1_mathematical_foundations.md
     - file: chapters/02_2_computer_fundamentals.md
-  
+
   - caption: Classical Cryptography
+    numbered: true
+    style: numerical
+    restart_numbering: true
     chapters:
     - file: chapters/03_classical_ciphers.md
     - file: chapters/04_cryptanalysis_basics.md
-  
+
   - caption: Modern Cryptography
+    numbered: true
+    style: numerical
+    restart_numbering: false
     chapters:
     - file: chapters/05_symmetric_encryption.md
     - file: chapters/06_block_ciphers.md
     - file: chapters/07_public_key_cryptography.md
     - file: chapters/08_rsa.md
     - file: chapters/09_elliptic_curves.md
-  
+
   - caption: Applications
+    numbered: true
+    style: numerical
+    restart_numbering: false
     chapters:
     - file: chapters/10_hash_functions.md
     - file: chapters/11_digital_signatures.md
     - file: chapters/12_key_exchange.md
     - file: chapters/13_practical_applications.ipynb
-  
+
   - caption: Reference
+    numbered: false
+    style: numerical
+    restart_numbering: false
     chapters:
     - file: references.md
     - file: credits.md

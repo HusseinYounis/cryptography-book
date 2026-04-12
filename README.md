@@ -49,9 +49,9 @@ Simply visit the website link above—no installation needed!
    pip install -r requirements.txt
    ```
 
-3. Build the book:
+3. Activate the virtual environment and build the book:
    ```bash
-   jupyter-book build book
+   source .venv/bin/activate && jupyter-book build book/
    ```
 
 4. View the book:

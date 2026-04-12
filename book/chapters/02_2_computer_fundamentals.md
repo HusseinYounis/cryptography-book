@@ -1,712 +1,418 @@
 # Chapter 2.2: Computer Fundamentals for Cryptography
 
-## Introduction
-
-Before diving deeper into cryptographic algorithms, it's essential to understand how computers represent and manipulate data. At the most fundamental level, computers operate using only two states: 0 and 1. This chapter explores the binary world of computing and the operations that form the foundation of modern cryptographic implementations.
-
-```{admonition} Why This Matters
-:class: tip
-Modern cryptography is implemented in software and hardware that operates exclusively with binary data. Understanding number systems, encoding schemes, and bitwise operations is crucial for implementing and analyzing cryptographic algorithms efficiently and securely.
+```{figure} ../figures/ch02_2/computer_banner.jpg
+:align: center
+:width: 60%
 ```
 
-## The Binary Foundation
+---
+
+## Warm-Up: Everything Is a Number
+
+What does the computer actually store when you type the letter **"A"**?
+
+```{admonition} Solution
+:class: dropdown
+The computer stores the number **65** in binary: **01000001**.
+
+Every character, image, and cryptographic key is ultimately a sequence of 0s and 1s. Understanding this binary world is the foundation for implementing and attacking cryptographic algorithms.
+```
+
+---
+
+## 1. Introduction
+
+Before diving deeper into cryptographic algorithms, it is essential to understand how computers represent and manipulate data. At the most fundamental level, computers operate using only two states: **0** and **1**.
+
+```{admonition} Why This Matters
+:class: important
+Modern cryptography is implemented in software and hardware that operates **exclusively with binary data**. Understanding number systems, encoding schemes, and bitwise operations is crucial for implementing and analyzing cryptographic algorithms efficiently and securely.
+```
+
+---
+
+## 2. The Binary Foundation
 
 ### Digital Logic: The Language of Computers
 
-Computers use electronic circuits that can be in one of two states:
-- **0 (Low voltage)**: Typically represents "false" or "off"
-- **1 (High voltage)**: Typically represents "true" or "on"
+Computers use electronic circuits that can be in one of **two states**:
 
-This binary system forms the basis of all digital computation. Every piece of data—text, numbers, images, encryption keys—is ultimately represented as a sequence of 0s and 1s.
+```{figure} ../figures/ch02_2/binary_on_off.png
+:align: center
+:width: 40%
 
-### Binary Units
-
-```{list-table} Fundamental Binary Units
-:header-rows: 1
-:name: binary-units
-
-* - Unit
-  - Size
-  - Description
-* - **Bit**
-  - 1 binary digit
-  - Smallest unit of data (0 or 1)
-* - **Nibble**
-  - 4 bits
-  - Half a byte, one hexadecimal digit
-* - **Byte**
-  - 8 bits
-  - Standard unit for character representation
-* - **Word**
-  - 16, 32, or 64 bits
-  - Processor-dependent data unit
-* - **Kilobyte (KB)**
-  - 1,024 bytes
-  - $2^{10}$ bytes
-* - **Megabyte (MB)**
-  - 1,024 KB
-  - $2^{20}$ bytes
-* - **Gigabyte (GB)**
-  - 1,024 MB
-  - $2^{30}$ bytes
+Binary states: 0 = Off (low voltage), 1 = On (high voltage)
 ```
+
+| State | Voltage | Meaning |
+|:---:|:---:|:---:|
+| **0** | Low | False / Off |
+| **1** | High | True / On |
+
+This binary system forms the basis of all digital computation. Every piece of data — text, numbers, images, encryption keys — is ultimately represented as a **sequence of 0s and 1s**.
+
+---
+
+## 3. Binary Numbers
+
+All digital content including text messages, emails, images, sounds and videos are converted into binary so that computers can process them. A **binary digit** (bit) has one of two possibilities: 0 or 1.
+
+| Decimal | Binary |
+|:---:|:---:|
+| 0 | 0 |
+| 1 | 1 |
+| 2 | 10 |
+| 3 | 11 |
+| 4 | 100 |
+| 5 | 101 |
+| 6 | 110 |
+| 7 | 111 |
+| 8 | 1000 |
+| 9 | 1001 |
+| 10 | 1010 |
+
+---
+
+## 4. Binary Units
+
+| Unit | Size | Description |
+|:---|:---:|:---|
+| **Bit** | 1 binary digit | Smallest unit of data (0 or 1) |
+| **Nibble** | 4 bits | Half a byte; one hexadecimal digit |
+| **Byte** | 8 bits | Standard unit for character representation |
+| **Word** | 16, 32, or 64 bits | Processor-dependent data unit |
+| **Kilobyte (KB)** | 1,024 bytes | $2^{10}$ bytes |
+| **Megabyte (MB)** | 1,024 KB | $2^{20}$ bytes |
+| **Gigabyte (GB)** | 1,024 MB | $2^{30}$ bytes |
 
 ```{note}
-In computing, we use powers of 2 (1024) rather than powers of 10 (1000) because computer architecture is based on binary.
+In computing, we use powers of 2 (1024) rather than powers of 10 (1000), because computer architecture is based on binary.
 ```
 
-## Number Systems
+---
 
-### Decimal (Base-10)
+## 5. Number Systems
 
-The number system we use daily, with digits 0-9.
+### 5.1 Overview
 
-$$N_{10} = d_n \times 10^n + d_{n-1} \times 10^{n-1} + \ldots + d_1 \times 10^1 + d_0 \times 10^0$$
+| System | Base | Digits Used | Example (Value = 26) |
+|:---|:---:|:---|:---:|
+| **Binary** | 2 | 0, 1 | `11010` |
+| **Decimal** | 10 | 0–9 | `26` |
+| **Hexadecimal** | 16 | 0–9, A–F | `1A` |
 
-**Example:** $1234_{10} = 1 \times 10^3 + 2 \times 10^2 + 3 \times 10^1 + 4 \times 10^0$
+### 5.2 Binary (Base-2)
 
-### Binary (Base-2)
+Uses only digits 0 and 1 — the native language of computers.
 
-Uses only digits 0 and 1, the native language of computers.
+$$N_2 = b_n \times 2^n + b_{n-1} \times 2^{n-1} + \cdots + b_1 \times 2^1 + b_0 \times 2^0$$
 
-$$N_2 = b_n \times 2^n + b_{n-1} \times 2^{n-1} + \ldots + b_1 \times 2^1 + b_0 \times 2^0$$
+**Example:**
 
-**Example:** $1011_2 = 1 \times 2^3 + 0 \times 2^2 + 1 \times 2^1 + 1 \times 2^0 = 11_{10}$
+$$1011_2 = 1 \times 2^3 + 0 \times 2^2 + 1 \times 2^1 + 1 \times 2^0 = 8 + 0 + 2 + 1 = 11_{10}$$
 
-### Hexadecimal (Base-16)
+### 5.3 Decimal (Base-10)
 
-Uses digits 0-9 and letters A-F (where A=10, B=11, ..., F=15).
+The number system we use daily, with digits 0–9.
 
-```{list-table} Hexadecimal to Decimal Conversion
-:header-rows: 1
-:name: hex-decimal
+$$N_{10} = d_n \times 10^n + d_{n-1} \times 10^{n-1} + \cdots + d_1 \times 10^1 + d_0 \times 10^0$$
 
-* - Hex
-  - Decimal
-  - Binary
-* - 0
-  - 0
-  - 0000
-* - 1
-  - 1
-  - 0001
-* - ...
-  - ...
-  - ...
-* - 9
-  - 9
-  - 1001
-* - A
-  - 10
-  - 1010
-* - B
-  - 11
-  - 1011
-* - C
-  - 12
-  - 1100
-* - D
-  - 13
-  - 1101
-* - E
-  - 14
-  - 1110
-* - F
-  - 15
-  - 1111
-```
+**Example:**
 
-**Example:** $2A3_{16} = 2 \times 16^2 + 10 \times 16^1 + 3 \times 16^0 = 675_{10}$
+$$1234_{10} = 1 \times 10^3 + 2 \times 10^2 + 3 \times 10^1 + 4 \times 10^0 = 1000 + 200 + 30 + 4$$
+
+### 5.4 Hexadecimal (Base-16)
+
+Uses digits 0–9 and letters A–F (where A=10, B=11, ..., F=15).
 
 ```{admonition} Why Hexadecimal in Cryptography?
 :class: important
-Hexadecimal is extensively used in cryptography because:
-- One hex digit represents exactly 4 bits (1 nibble)
-- Two hex digits represent exactly 1 byte
+- One hex digit represents exactly **4 bits** (1 nibble)
+- Two hex digits represent exactly **1 byte**
 - Much more compact and readable than binary
 - Easy conversion to/from binary
-- Example: AES-256 key = 64 hex characters = 256 bits
+- **Example:** An AES-256 key = 64 hex characters = 256 bits
 ```
 
-### Octal (Base-8)
+```{figure} ../figures/ch02_2/hex_decimal_binary_table.png
+:align: center
+:width: 30%
 
-Uses digits 0-7. Less common in modern cryptography but occasionally seen in Unix permissions and legacy systems.
-
-**Example:** $157_8 = 1 \times 8^2 + 5 \times 8^1 + 7 \times 8^0 = 111_{10}$
-
-## Number System Conversions
-
-### Decimal to Binary
-
-**Division Method:**
-1. Divide the decimal number by 2
-2. Record the remainder
-3. Continue dividing the quotient by 2
-4. Read remainders from bottom to top
-
-**Example: Convert** $45_{10}$ **to binary**
-
-```
-45 ÷ 2 = 22 remainder 1  ←─┐
-22 ÷ 2 = 11 remainder 0    │
-11 ÷ 2 = 5  remainder 1    │ Read upward
-5  ÷ 2 = 2  remainder 1    │
-2  ÷ 2 = 1  remainder 0    │
-1  ÷ 2 = 0  remainder 1  ←─┘
-
-Result: 101101₂
+Hexadecimal to Decimal to Binary reference table
 ```
 
-### Binary to Decimal
+---
 
-Sum the powers of 2 for each bit position with value 1.
+## 6. Logic Gates
 
-**Example:** $101101_2 = 1×2^5 + 0×2^4 + 1×2^3 + 1×2^2 + 0×2^1 + 1×2^0 = 32 + 8 + 4 + 1 = 45_{10}$
+Logic gates are the **building blocks** of digital circuits and cryptographic hardware. Each gate performs a basic Boolean operation on one or two binary inputs and produces one output.
 
-### Binary to Hexadecimal
+```{figure} ../figures/ch02_2/logic_gates.png
+:align: center
+:width: 90%
 
-Group binary digits in sets of 4 (from right to left) and convert each group to hex.
-
-**Example:** $11010111_2$
-
-```
-1101  0111
- ↓     ↓
- D     7
-
-Result: D7₁₆
+Logic gates: BUFFER, NOT, AND, OR, XOR, NAND, NOR, XNOR — with truth tables
 ```
 
-### Hexadecimal to Binary
+| Gate | Symbol | Description | Key Property |
+|:---:|:---:|:---|:---|
+| **BUFFER** | → | Output equals input | Signal amplification |
+| **NOT** | ¬ | Inverts the input | $0 \to 1$, $1 \to 0$ |
+| **AND** | ∧ | Output is 1 only when both inputs are 1 | "This **and** that" |
+| **OR** | ∨ | Output is 1 when at least one input is 1 | "This **or** that" |
+| **XOR** | ⊕ | Output is 1 when inputs **differ** | "One or the other, not both" |
+| **NAND** | ¬∧ | NOT-AND; opposite of AND | Universal gate |
+| **NOR** | ¬∨ | NOT-OR; opposite of OR | Universal gate |
+| **XNOR** | ≡ | Inverted XOR; 1 when inputs are equal | Equality test |
 
-Convert each hex digit to 4 binary digits.
-
-**Example:** $3AF_{16}$
-
-```
-3     A     F
-↓     ↓     ↓
-0011  1010  1111
-
-Result: 001110101111₂
-```
-
-## Character Encoding
-
-### ASCII (American Standard Code for Information Interchange)
-
-7-bit encoding (128 characters) for English text.
-
-```{list-table} Common ASCII Values
-:header-rows: 1
-:name: ascii-table
-
-* - Character
-  - Decimal
-  - Hex
-  - Binary
-* - 'A'
-  - 65
-  - 0x41
-  - 01000001
-* - 'Z'
-  - 90
-  - 0x5A
-  - 01011010
-* - 'a'
-  - 97
-  - 0x61
-  - 01100001
-* - 'z'
-  - 122
-  - 0x7A
-  - 01111010
-* - '0'
-  - 48
-  - 0x30
-  - 00110000
-* - '9'
-  - 57
-  - 0x39
-  - 00111001
-* - Space
-  - 32
-  - 0x20
-  - 00100000
-```
-
-**Example:** "CAT" in ASCII
-```
-C: 67  = 0x43 = 01000011
-A: 65  = 0x41 = 01000001
-T: 84  = 0x54 = 01010100
-```
-
-### Extended ASCII
-
-8-bit encoding (256 characters) including additional symbols and international characters.
-
-### Unicode (UTF-8, UTF-16, UTF-32)
-
-Universal character encoding supporting all world languages and symbols.
-
-**UTF-8:**
-- Variable-length encoding (1-4 bytes)
-- Backward compatible with ASCII
-- Most common on the web
-
-### Base64 Encoding
-
-Encodes binary data using 64 printable ASCII characters: A-Z, a-z, 0-9, +, /
-
-**Character Set:**
-```
-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
-```
-
-**Algorithm:**
-1. Take 3 bytes (24 bits) of input
-2. Split into 4 groups of 6 bits
-3. Convert each 6-bit group to Base64 character
-4. Add '=' padding if needed
-
-**Example:** Encode "Hi!"
-
-```
-Input:     H        i        !
-Binary:    01001000 01101001 00100001
-Grouped:   010010   000110   100100   100001
-           ↓        ↓        ↓        ↓
-Base64:    S        G        k        h
-
-Result: "SGkh"
-```
-
-```{admonition} Base64 in Cryptography
-:class: tip
-Base64 is commonly used to:
-- Encode binary encryption keys for text transmission
-- Represent digital certificates (PEM format)
-- Embed encrypted data in JSON/XML
-- Email attachments (MIME)
-```
-
-### Hexadecimal Encoding
-
-Each byte represented as two hex digits (00-FF).
-
-**Example:** "Hello"
-```
-H: 0x48
-e: 0x65
-l: 0x6C
-l: 0x6C
-o: 0x6F
-
-Hex: 48656C6C6F
-```
-
-## Bitwise Operations
-
-### Basic Logic Gates
-
-Fundamental operations used in cryptographic algorithms.
-
-#### AND Operation (∧)
-
-Returns 1 only if both bits are 1.
-
-```{list-table} AND Truth Table
-:header-rows: 1
-:name: and-gate
-
-* - A
-  - B
-  - A ∧ B
-* - 0
-  - 0
-  - 0
-* - 0
-  - 1
-  - 0
-* - 1
-  - 0
-  - 0
-* - 1
-  - 1
-  - 1
-```
-
-**Example:**
-```
-  10110011
-∧ 11110000
------------
-  10110000
-```
-
-**Uses:** Masking, extracting specific bits, bit clearing.
-
-#### OR Operation (∨)
-
-Returns 1 if at least one bit is 1.
-
-```{list-table} OR Truth Table
-:header-rows: 1
-:name: or-gate
-
-* - A
-  - B
-  - A ∨ B
-* - 0
-  - 0
-  - 0
-* - 0
-  - 1
-  - 1
-* - 1
-  - 0
-  - 1
-* - 1
-  - 1
-  - 1
-```
-
-**Example:**
-```
-  10110011
-∨ 11110000
------------
-  11110011
-```
-
-**Uses:** Setting specific bits, combining flags.
-
-#### XOR Operation (⊕)
-
-Returns 1 if bits are different, 0 if same.
-
-```{list-table} XOR Truth Table
-:header-rows: 1
-:name: xor-gate
-
-* - A
-  - B
-  - A ⊕ B
-* - 0
-  - 0
-  - 0
-* - 0
-  - 1
-  - 1
-* - 1
-  - 0
-  - 1
-* - 1
-  - 1
-  - 0
-```
-
-**Example:**
-```
-  10110011
-⊕ 11110000
------------
-  01000011
-```
-
-```{admonition} XOR: The Heart of Cryptography
+```{admonition} XOR in Cryptography
 :class: important
-XOR is fundamental to cryptography because:
-- **Reversible:** $A ⊕ B ⊕ B = A$
-- **Self-inverse:** $A ⊕ A = 0$
-- **Used in:** Stream ciphers, one-time pad, block cipher modes
-- **Example:** If plaintext ⊕ key = ciphertext, then ciphertext ⊕ key = plaintext
+The **XOR gate** is the most important logic operation in cryptography:
+- It is the foundation of stream ciphers and one-time pads: $C = P \oplus K$
+- Self-inverse: $(P \oplus K) \oplus K = P$ — XOR-ing twice restores the original
+- Equal probability output: does not leak statistical information about the input
 ```
 
-#### NOT Operation (¬)
+---
 
-Inverts all bits (1→0, 0→1).
+## 7. Bitwise Operations
 
-```{list-table} NOT Truth Table
-:header-rows: 1
-:name: not-gate
+Bitwise operations apply logic gates **bit by bit** across binary numbers. They are used extensively in cryptographic algorithms for mixing, masking, and permuting data.
 
-* - A
-  - ¬A
-* - 0
-  - 1
-* - 1
-  - 0
+```{figure} ../figures/ch02_2/bitwise_operations.png
+:align: center
+:width: 80%
+
+Bitwise AND, OR, XOR, and Shift operations with worked examples
 ```
 
-**Example:**
-```
-  10110011
-¬ 
------------
-  01001100
-```
+### Operation Summary
 
-**Uses:** Bit inversion, complementing data.
+| Operation | Symbol | Purpose | Example |
+|:---:|:---:|:---|:---|
+| **AND** | `&` | Extract / mask specific bits | `60 & 6 = 4` |
+| **OR** | `\|` | Set specific bits | `60 \| 6 = 62` |
+| **XOR** | `^` | Flip / toggle specific bits | `60 ^ 6 = 58` |
+| **Left Shift** | `<<` | Multiply by $2^k$ | `60 << 1 = 120` |
+| **Right Shift** | `>>` | Divide by $2^k$ | `60 >> 2 = 15` |
 
-#### NAND, NOR, XNOR
+---
 
-**NAND:** NOT AND → $\overline{A \land B}$  
-**NOR:** NOT OR → $\overline{A \lor B}$  
-**XNOR:** NOT XOR → $\overline{A \oplus B}$ (equality check)
+## 8. Character Encoding
 
-### Bit Shifting Operations
+### 8.1 Key Idea
 
-#### Left Shift (<<)
+At the hardware level, computers only understand **bytes** — sequences of 8 bits representing values from 0 to 255. Character encoding provides the **mapping rules** between byte values and human-readable characters.
 
-Shifts bits to the left, fills with 0s on the right.
+This standardization is crucial for:
+- **Data exchange** — different systems interpret text consistently
+- **Cryptography** — converting plaintext to processable binary data
+- **Storage** — efficiently representing text in computer memory
+- **Communication** — transmitting text across networks reliably
 
-**Example:** `10110011 << 2 = 11001100`
+### 8.2 ASCII
 
-**Effect:** Multiplies by $2^n$ where n is shift amount  
-`10110011 << 2` = multiply by 4
+**ASCII** (American Standard Code for Information Interchange) is a 7-bit encoding (128 characters) for English text. It associates each letter and punctuation mark with a unique numeric representation, and is the **foundation of text encoding** in cryptography and computing.
 
-**Uses:** Fast multiplication, bit manipulation, alignment.
+```{figure} ../figures/ch02_2/ascii_table.png
+:align: center
+:width: 100%
 
-#### Right Shift (>>)
-
-**Logical Right Shift:** Fills with 0s on the left.
-
-**Example:** `10110011 >> 2 = 00101100`
-
-**Effect:** Divides by $2^n$ (integer division)
-
-**Arithmetic Right Shift:** Preserves sign bit (for signed integers).
-
-**Example (signed):** `10110011 >> 2 = 11101100` (sign extended)
-
-**Uses:** Fast division, extracting high-order bits.
-
-### Rotation Operations
-
-#### Circular Left Rotate (ROL)
-
-Bits that fall off the left end reappear on the right.
-
-**Example:** `ROL(10110011, 2) = 11001110`
-
-```
-10110011  →  11001110
-↑↑                 ↑↑
-└─────────────────┘
+Full ASCII table (values 0–127)
 ```
 
-#### Circular Right Rotate (ROR)
+**Key values to know:**
 
-Bits that fall off the right end reappear on the left.
+| Character | Decimal | Hex | Binary |
+|:---:|:---:|:---:|:---:|
+| `'A'` | 65 | `0x41` | `01000001` |
+| `'a'` | 97 | `0x61` | `01100001` |
+| `'0'` | 48 | `0x30` | `00110000` |
+| Space | 32 | `0x20` | `00100000` |
 
-**Example:** `ROR(10110011, 2) = 11101100`
+### 8.3 Getting ASCII Values in C++
 
-```
-10110011  →  11101100
-  ↓↓       ↓↓
-  └────────┘
-```
+In C++, characters (`char`) are stored as integers using their ASCII values. Simply **cast the char to an integer type** to read the value.
 
-```{admonition} Rotations in Cryptography
-:class: tip
-Rotation operations are used extensively in:
-- **SHA hash functions:** Message schedule generation
-- **DES cipher:** Key schedule and permutations
-- **ChaCha20 stream cipher:** Quarter-round function
-- **RC5/RC6 ciphers:** Data-dependent rotations
-```
+```cpp
+#include <iostream>
+using namespace std;
 
-### Bit Masking
-
-Using bitwise operations to isolate or modify specific bits.
-
-#### Setting a Bit
-
-```
-Original:  10110011
-Mask:      00001000  (bit 3)
-Operation: OR
-Result:    10111011
+int main() {
+    char letter = 'A';
+    int ascii = (int)letter;
+    cout << "ASCII of '" << letter << "' is " << ascii << endl;
+    return 0;
+}
 ```
 
-#### Clearing a Bit
-```
-Original:  10110011
-Mask:      11110111  (NOT of bit 3)
-Operation: AND
-Result:    10110011
-```
+**Output:** `ASCII of 'A' is 65`
 
-#### Toggling a Bit
-```
-Original:  10110011
-Mask:      00001000  (bit 3)
-Operation: XOR
-Result:    10111011
-```
+### 8.4 Unicode and `char32_t` in C++
 
-#### Extracting Bits
-```
-Original:  10110011
-Mask:      00111100  (extract bits 2-5)
-Operation: AND
-Result:    00110000
-Shift:     >> 2
-Final:     00001100  (value = 12)
+Standard `char` in C++ is 1 byte (values 0–255). Emojis and characters from non-Latin scripts require **Unicode** code points that do not fit in a single byte.
+
+**Solution:** Use `char32_t` — a 4-byte type that holds full Unicode code points.
+
+```cpp
+#include <iostream>
+int main() {
+    char32_t emoji = U'😀';    // char32_t literal
+    std::cout << "Code point: " << (unsigned int)emoji << std::endl;
+    return 0;
+}
 ```
 
-## Practical Applications in Cryptography
+### 8.5 Python ASCII Functions
 
-### XOR Cipher (Stream Cipher Example)
+Python provides built-in functions for ASCII conversion:
 
-```
-Plaintext:  01001000 01100101 01101100 01101100 01101111  ("Hello")
-Key:        10101010 10101010 10101010 10101010 10101010
-           ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕
-Ciphertext: 11100010 11001111 11000110 11000110 11000101
-```
+| Function | Description |
+|:---|:---|
+| `ord(char)` | Returns the ASCII code of a character |
+| `chr(code)` | Returns the character for an ASCII code |
+| `format(num, '08b')` | Converts number to 8-bit binary string |
+| `format(num, '02X')` | Converts number to 2-digit hexadecimal string |
 
-**Decryption (same operation):**
-```
-Ciphertext: 11100010 11001111 11000110 11000110 11000101
-Key:        10101010 10101010 10101010 10101010 10101010
-           ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕ ⊕⊕⊕⊕⊕⊕⊕⊕
-Plaintext:  01001000 01100101 01101100 01101100 01101111  ("Hello")
-```
+```{figure} ../figures/ch02_2/python_ascii_code.png
+:align: center
+:width: 80%
 
-### S-Box (Substitution Box)
-
-Uses bit patterns as lookup indices:
-
-```
-Input:  1011 (11 in decimal)
-S-Box:  [5, 2, 14, 11, ..., 9, 3, 7, 15]
-Output: S[11] = 3 = 0011
+Python code: converting a character to ASCII, binary, and hexadecimal
 ```
 
-### Permutation (P-Box)
+**Code:**
 
-Rearranges bit positions:
+```python
+char = 'A'
 
-```
-Input:     10110011
-P-Box:     [3,7,2,6,1,5,0,4]  (new positions)
-Output:    11001011
-```
+ascii_code = ord(char)
+print(f"Character: {char} → ASCII code: {ascii_code}")
 
-### Feistel Function
+restored_char = chr(ascii_code)
+print(f"ASCII code: {ascii_code} → Character: {restored_char}")
 
-Combines XOR with function output:
+binary = format(ascii_code, '08b')
+print(f"ASCII code: {ascii_code} → Binary (8-bit): {binary}")
 
-```
-Left:   10110011
-Right:  11001100
-F(R,K): 01010101
-       ⊕
-New R:  11100110
+hexadecimal = format(ascii_code, '02X')
+print(f"ASCII code: {ascii_code} → Hexadecimal (2-digit): {hexadecimal}")
 ```
 
-## Performance Considerations
-
-### Why Bitwise Operations Matter
-
-```{list-table} Operation Performance
-:header-rows: 1
-:name: perf-comparison
-
-* - Operation Type
-  - CPU Cycles (approx)
-  - Speed
-* - Bitwise (AND, OR, XOR)
-  - 1
-  - Fastest
-* - Shift/Rotate
-  - 1-2
-  - Very Fast
-* - Integer Addition
-  - 1-3
-  - Fast
-* - Integer Multiplication
-  - 3-5
-  - Moderate
-* - Division/Modulo
-  - 20-40
-  - Slow
+**Output:**
+```
+Character: A → ASCII code: 65
+ASCII code: 65 → Character: A
+ASCII code: 65 → Binary (8-bit): 01000001
+ASCII code: 65 → Hexadecimal (2-digit): 41
 ```
 
-### Optimization Examples
-
-**Instead of:** `x * 8` (multiplication)  
-**Use:** `x << 3` (left shift by 3)
-
-**Instead of:** `x / 16` (division)  
-**Use:** `x >> 4` (right shift by 4)
-
-**Instead of:** `x % 256` (modulo)  
-**Use:** `x & 0xFF` (AND mask)
+---
 
 ## Summary
 
-Understanding computer fundamentals is essential for cryptography because:
+| Concept | Key Facts |
+|:---|:---|
+| **Binary** | Base-2; only 0 and 1; language of all digital hardware |
+| **Binary Units** | Bit → Nibble (4) → Byte (8) → Word → KB/MB/GB |
+| **Number Systems** | Binary (2), Decimal (10), Hexadecimal (16) |
+| **Hex** | 1 hex digit = 4 bits; 2 hex digits = 1 byte; compact key representation |
+| **Logic Gates** | AND, OR, XOR, NOT, NAND, NOR, XNOR — building blocks of circuits |
+| **XOR** | Self-inverse bitwise operation; core of stream ciphers and OTP |
+| **Bitwise Ops** | AND (mask), OR (set), XOR (flip), Shift (scale) |
+| **ASCII** | 7-bit encoding; 128 characters; maps letters to numbers |
+| **Unicode** | Universal encoding for all world scripts; `char32_t` for 4-byte code points |
 
-1. **Data Representation:** All cryptographic data is ultimately binary
-2. **Efficiency:** Bitwise operations are the fastest operations available
-3. **Algorithm Design:** Many ciphers rely heavily on bit manipulation
-4. **Implementation:** Writing efficient cryptographic code requires low-level understanding
-5. **Analysis:** Understanding bit patterns helps in cryptanalysis
-
-```{admonition} Key Takeaways
-:class: note
-- Computers operate in binary (base-2)
-- Hexadecimal provides compact representation of binary data
-- XOR is fundamental to cryptographic operations
-- Bitwise operations are extremely fast
-- Shifts and rotations are used throughout cryptography
-- Proper encoding/decoding is critical for data integrity
-```
+---
 
 ## Exercises
 
-```{exercise}
-:label: hex-conversion
+**Exercise 1.** Convert the following:
+- (a) $1101_2$ to decimal
+- (b) $47_{10}$ to binary
+- \(c) $3F_{16}$ to binary
+- (d) $10110110_2$ to hexadecimal
 
-Convert the following hexadecimal key to binary:
-```
-Key: 0xA5F3
-```
+```{admonition} Solutions
+:class: dropdown
+(a) $1101_2 = 8+4+1 = 13_{10}$
 
-What is the decimal value?
-```
+(b) $47 \div 2$: remainders bottom-to-top → $101111_2$
 
-```{exercise}
-:label: xor-cipher
+\(c) $3 = 0011$, $F = 1111$ → $00111111_2$
 
-Encrypt the message "CRYPTO" using the repeating key "KEY" with XOR.
-Show your work in binary.
-```
-
-```{exercise}
-:label: bit-masking-exercise
-
-Given the byte `11010110`:
-1. Set bit 3 to 1
-2. Clear bit 6 to 0
-3. Toggle bit 4
-Show the mask and result for each operation.
+(d) Group: $1011\ 0110$ → $B6_{16}$
 ```
 
-```{exercise}
-:label: rotation
+**Exercise 2.** Compute the following bitwise operations on $a = 0b10110100$ (= 180) and $b = 0b00111001$ (= 57):
+- (a) $a$ AND $b$
+- (b) $a$ OR $b$
+- \(c) $a$ XOR $b$
+- (d) $a$ right-shifted by 2
 
-Perform a left rotation by 3 positions on `10011101`.
-Then perform a right rotation by 2 positions on the result.
-What is the final value?
+```{admonition} Solutions
+:class: dropdown
+~~~
+  a: 10110100
+  b: 00111001
+
+(a) AND:  00110000 = 48
+(b) OR:   10111101 = 189
+\(c) XOR:  10001101 = 141
+(d) >>2:  00101101 = 45
+~~~
 ```
 
-## Further Reading
+**Exercise 3.** Fill in the truth table for XOR:
 
-- **"Hacker's Delight"** by Henry S. Warren Jr. - Advanced bit manipulation techniques
-- **"Computer Systems: A Programmer's Perspective"** by Bryant & O'Hallaron - Low-level programming
-- **"The Art of Computer Programming"** by Donald Knuth - Volume 2: Seminumerical Algorithms
+| A | B | A XOR B |
+|:---:|:---:|:---:|
+| 0 | 0 | ? |
+| 0 | 1 | ? |
+| 1 | 0 | ? |
+| 1 | 1 | ? |
+
+Then explain why XOR is self-inverse: $(P \oplus K) \oplus K = P$.
+
+```{admonition} Solution
+:class: dropdown
+| A | B | A XOR B |
+|:---:|:---:|:---:|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+For self-inverse: $P \oplus K$ flips the bits of $P$ wherever $K=1$. Then XOR-ing again with the same $K$ flips those same bits back, restoring $P$ exactly. Formally, $x \oplus x = 0$ for any $x$, so $(P \oplus K) \oplus K = P \oplus (K \oplus K) = P \oplus 0 = P$.
+```
+
+**Exercise 4.** Write the string `"HI"` as:
+- (a) ASCII decimal values
+- (b) 8-bit binary
+- \(c) Hexadecimal
+
+```{admonition} Solution
+:class: dropdown
+(a) H=72, I=73
+
+(b) H: 01001000, I: 01001001
+
+\(c) H: 48, I: 49 (hex)
+```
+
+**Exercise 5.** Encrypt the byte `P = 0b10110011` (= 179) with the key `K = 0b11001010` (= 202) using XOR. Then decrypt by XOR-ing the ciphertext with the same key. Verify you recover $P$.
+
+```{admonition} Solution
+:class: dropdown
+~~~
+  P: 10110011
+  K: 11001010
+  C = P⊕K: 01111001 = 121
+
+  C: 01111001
+  K: 11001010
+  P' = C⊕K: 10110011 = 179 ✓
+~~~
+
+$P' = P$, confirming XOR decryption works.
+```

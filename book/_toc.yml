@@ -16,7 +16,7 @@ parts:
     - file: chapters/02_2_computer_fundamentals.md
 
   - caption: Classical Cryptography
-    numbered: true
+    numbered: false
     style: numerical
     restart_numbering: true
     chapters:
@@ -24,25 +24,27 @@ parts:
     - file: chapters/04_cryptanalysis_basics.md
 
   - caption: Modern Cryptography
-    numbered: true
+    numbered: false
     style: numerical
     restart_numbering: false
     chapters:
-    - file: chapters/05_symmetric_encryption.md
-    - file: chapters/06_block_ciphers.md
-    - file: chapters/07_public_key_cryptography.md
-    - file: chapters/08_rsa.md
-    - file: chapters/09_elliptic_curves.md
+    - file: chapters/05_modern_cryptography_intro.md
+    - file: chapters/06_symmetric_encryption.md
+    - file: chapters/07_randomness_and_stream_ciphers.md
+    - file: chapters/08_block_ciphers.md
+    - file: chapters/09_public_key_cryptography.md
+    - file: chapters/10_rsa.md
+    - file: chapters/11_elliptic_curves.md
 
   - caption: Applications
-    numbered: true
+    numbered: false
     style: numerical
     restart_numbering: false
     chapters:
-    - file: chapters/10_hash_functions.md
-    - file: chapters/11_digital_signatures.md
-    - file: chapters/12_key_exchange.md
-    - file: chapters/13_practical_applications.ipynb
+    - file: chapters/12_hash_functions.md
+    - file: chapters/13_digital_signatures.md
+    - file: chapters/14_key_exchange.md
+    - file: chapters/15_practical_applications.ipynb
 
   - caption: Reference
     numbered: false

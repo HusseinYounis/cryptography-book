@@ -5,6 +5,9 @@ teachbooks
 # https://github.com/TeachBooks/TeachBooks-Favourites
 git+https://github.com/TeachBooks/TeachBooks-Favourites
 
+# Mermaid diagram support (required by sphinxcontrib.mermaid in _config.yml)
+sphinxcontrib-mermaid
+
 # Content-specific packages for cryptography notebooks
 matplotlib
 numpy

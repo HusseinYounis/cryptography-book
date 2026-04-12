@@ -81,21 +81,67 @@ A cipher must have **both** properties to resist statistical attacks:
 
 Most block ciphers built before 2000 (including DES) use the **Feistel structure**, which elegantly unifies encryption and decryption into the same circuit.
 
-```{prf:definition} Feistel Network
+### 2.1 Key Design Parameters
+
+```{prf:definition} Feistel Cipher Parameters
+:label: def-feistel-params
+
+A general Feistel cipher is fully characterised by six design parameters:
+
+| Parameter | Description | Typical value |
+|:---|:---|:---:|
+| **Block size** ($2n$) | Width of the plaintext/ciphertext block in bits. Larger blocks resist statistical attacks. | 64 – 128 bits |
+| **Key size** ($k$) | Length of the master secret key. Determines the brute-force work factor $2^k$. | 56 – 256 bits |
+| **Number of rounds** ($r$) | How many times the round function is iterated. More rounds → stronger security but slower speed. | 8 – 32 rounds |
+| **Subkey generation algorithm** | Derives $r$ subkeys $K_1, \ldots, K_r$ (each $m$ bits wide) from the master key via permutations, shifts, and XOR. | Cipher-specific |
+| **Round function** $F$ | A keyed function $F: \{0,1\}^n \times \{0,1\}^m \to \{0,1\}^n$ applied to the right half in each round. Provides confusion and (partial) diffusion. **Need not be invertible.** | S-box + P-box combo |
+| **Swap rule** | After the last round the halves are exchanged so that encryption and decryption share the same circuit. | Always applied |
+```
+
+### 2.2 Encryption Structure
+
+```{prf:definition} Feistel Network — Encryption
 :label: def-feistel
 
-A **Feistel network** with $r$ rounds processes a $2n$-bit block as two $n$-bit halves $(L_0, R_0)$:
+A **Feistel network** with $r$ rounds processes a $2n$-bit block by splitting it into two $n$-bit halves $(L_0, R_0)$:
 
 **Encryption round $i$ ($1 \leq i \leq r$):**
 
 $$L_i = R_{i-1}$$
 $$R_i = L_{i-1} \oplus F(R_{i-1},\; K_i)$$
 
-where $F$ is the **round function** (need not be invertible) and $K_i$ is the $i$-th **subkey**.
+where $F$ is the **round function** and $K_i$ is the $i$-th **subkey** produced by the key schedule.
 
-**Ciphertext:** $(L_r,\; R_r)$
+**Ciphertext:** $(C_L,\; C_R) = (L_r,\; R_r)$
+```
 
-**Decryption:** Apply the same structure with subkeys in **reverse order**: $(K_r, K_{r-1}, \ldots, K_1)$.
+```{figure} ../figures/ch08/feistel_encrypt.avif
+:name: fig-feistel-encrypt
+:width: 60%
+:align: center
+
+**Feistel Cipher — Encryption.** The plaintext block is split into left half $L_0$ and right half $R_0$. In each round, the right half passes through the round function $F$ together with a subkey $K_i$; the result is XORed into the left half, and the halves swap. After $r$ rounds the concatenation $(L_r, R_r)$ is the ciphertext.
+```
+
+### 2.3 Decryption Structure
+
+```{prf:definition} Feistel Network — Decryption
+:label: def-feistel-dec
+
+**Decryption** uses the **identical circuit** but applies the subkeys in **reverse order** $(K_r, K_{r-1}, \ldots, K_1)$:
+
+$$R_{i-1} = L_i$$
+$$L_{i-1} = R_i \oplus F(L_i,\; K_i)$$
+
+The round function $F$ is **never inverted** — the XOR structure of the network provides invertibility for free.
+```
+
+```{figure} ../figures/ch08/feistel_decrypt.avif
+:name: fig-feistel-decrypt
+:width: 60%
+:align: center
+
+**Feistel Cipher — Decryption.** The ciphertext block $(L_r, R_r)$ enters the same circuit with subkeys applied in reverse order. Each round undoes one encryption round exactly, recovering $(L_0, R_0)$ from the final output.
 ```
 
 ```{admonition} Why Feistel Networks Are Elegant
@@ -103,22 +149,86 @@ where $F$ is the **round function** (need not be invertible) and $K_i$ is the $i
 The round function $F$ does **not** need to be invertible. Inversion is achieved by the XOR structure of the network itself. This means the same hardware/software circuit encrypts and decrypts — only the key schedule is reversed. DES's entire 16-round structure is symmetric; the chip from 1977 decrypts by reversing the key order.
 ```
 
-```{prf:example} Two-Round Feistel Trace
-:label: ex-feistel-trace
+### 2.4 Subkey Generation (Key Schedule)
 
-**Input:** $L_0 = 1010$, $R_0 = 1100$; subkeys $K_1 = 0110$, $K_2 = 1001$; round function $F(R, K) = R \oplus K$.
+```{prf:algorithm} Generic Feistel Key Schedule
+:label: algo-feistel-keyschedule
 
-**Round 1:**
-$$L_1 = R_0 = 1100$$
-$$R_1 = L_0 \oplus F(R_0, K_1) = 1010 \oplus (1100 \oplus 0110) = 1010 \oplus 1010 = 0000$$
+**Input:** Master key $K$ of $k$ bits
 
-**Round 2:**
-$$L_2 = R_1 = 0000$$
-$$R_2 = L_1 \oplus F(R_1, K_2) = 1100 \oplus (0000 \oplus 1001) = 1100 \oplus 1001 = 0101$$
+**Output:** $r$ subkeys $K_1, K_2, \ldots, K_r$, each of $m$ bits ($m \leq 2n$)
 
-**Ciphertext:** $(L_2, R_2) = (0000,\; 0101)$
+**Typical steps (illustrated by DES):**
 
-**Decryption** reverses with $K_2$ first, $K_1$ second — recovers $(L_0, R_0) = (1010,\; 1100)$.
+1. Apply an initial **permuted choice** (PC-1) that selects 56 of the 64 key bits and splits them into two 28-bit halves $C_0, D_0$.
+2. For each round $i = 1, \ldots, r$:
+   a. **Left-rotate** both halves by $s_i$ positions: $C_i \leftarrow \text{LS}_{s_i}(C_{i-1})$, $D_i \leftarrow \text{LS}_{s_i}(D_{i-1})$.
+   b. Apply a second **permuted choice** (PC-2) to the 56-bit concatenation $C_i \| D_i$ to select $m = 48$ bits as subkey $K_i$.
+3. Output $K_1, \ldots, K_{16}$.
+
+Decryption uses $K_{16}, K_{15}, \ldots, K_1$ (same schedule, reversed).
+```
+
+### 2.5 Solved Example — Encryption and Decryption
+
+```{prf:example} Complete 3-Round Feistel Cipher
+:label: ex-feistel-full
+
+**Given parameters:**
+- Block size: $2n = 8$ bits ($n = 4$)
+- Key: $K = 1010\;1100$ (8 bits)
+- Rounds: $r = 3$
+- Subkeys (derived from key schedule): $K_1 = 1010$, $K_2 = 0110$, $K_3 = 1100$
+- Round function: $F(R, K_i) = R \oplus K_i$ (XOR, for simplicity)
+- Plaintext: $P = L_0 \| R_0 = 0011\;1010$
+
+---
+
+**ENCRYPTION**
+
+Starting state: $L_0 = 0011$, $R_0 = 1010$
+
+**Round 1** (subkey $K_1 = 1010$):
+
+$$L_1 = R_0 = 1010$$
+$$R_1 = L_0 \oplus F(R_0, K_1) = 0011 \oplus (1010 \oplus 1010) = 0011 \oplus 0000 = 0011$$
+
+**Round 2** (subkey $K_2 = 0110$):
+
+$$L_2 = R_1 = 0011$$
+$$R_2 = L_1 \oplus F(R_1, K_2) = 1010 \oplus (0011 \oplus 0110) = 1010 \oplus 0101 = 1111$$
+
+**Round 3** (subkey $K_3 = 1100$):
+
+$$L_3 = R_2 = 1111$$
+$$R_3 = L_2 \oplus F(R_2, K_3) = 0011 \oplus (1111 \oplus 1100) = 0011 \oplus 0011 = 0000$$
+
+**Ciphertext:** $C = L_3 \| R_3 = \mathbf{1111\;0000}$
+
+---
+
+**DECRYPTION** (same circuit, subkeys reversed: $K_3, K_2, K_1$)
+
+Starting state: $L_3 = 1111$, $R_3 = 0000$
+
+**Round 1 of decryption** (subkey $K_3 = 1100$):
+
+$$R_2 = L_3 = 1111$$
+$$L_2 = R_3 \oplus F(L_3, K_3) = 0000 \oplus (1111 \oplus 1100) = 0000 \oplus 0011 = 0011$$
+
+**Round 2 of decryption** (subkey $K_2 = 0110$):
+
+$$R_1 = L_2 = 0011$$
+$$L_1 = R_2 \oplus F(L_2, K_2) = 1111 \oplus (0011 \oplus 0110) = 1111 \oplus 0101 = 1010$$
+
+**Round 3 of decryption** (subkey $K_1 = 1010$):
+
+$$R_0 = L_1 = 1010$$
+$$L_0 = R_1 \oplus F(L_1, K_1) = 0011 \oplus (1010 \oplus 1010) = 0011 \oplus 0000 = 0011$$
+
+**Recovered plaintext:** $P = L_0 \| R_0 = \mathbf{0011\;1010}$ ✓
+
+The original plaintext is perfectly recovered.
 ```
 
 ::::{question} Feistel Network Properties
@@ -500,26 +610,32 @@ except ImportError:
 ```{exercise} Feistel Decryption
 :label: ch08-ex-feistel
 
-Using the same parameters as {prf:ref}`ex-feistel-trace` ($K_1=0110$, $K_2=1001$, $F(R,K)=R \oplus K$), decrypt the ciphertext $(L_2, R_2) = (0000, 0101)$ and verify you recover $(L_0, R_0) = (1010, 1100)$.
+Using the same parameters as {prf:ref}`ex-feistel-full` ($K_1=1010$, $K_2=0110$, $K_3=1100$, $F(R,K)=R \oplus K$), encrypt plaintext $P = 0110\;1001$ and then decrypt your ciphertext to verify the original plaintext is recovered.
 ```
 
 ```{solution} ch08-ex-feistel
 :label: sol-ch08-ex-feistel
 :class: dropdown
 
-Decryption applies the rounds in reverse with reversed key order ($K_2$ first, then $K_1$):
+**Encryption** — $L_0=0110$, $R_0=1001$
 
-**Decryption round 2** (undo encryption round 2, using $K_2 = 1001$):
+Round 1 ($K_1=1010$): $L_1=1001$, $R_1=0110\oplus(1001\oplus1010)=0110\oplus0011=0101$
 
-$$R_1 = L_2 = 0000$$
-$$L_1 = R_2 \oplus F(L_2, K_2) = 0101 \oplus (0000 \oplus 1001) = 0101 \oplus 1001 = 1100$$
+Round 2 ($K_2=0110$): $L_2=0101$, $R_2=1001\oplus(0101\oplus0110)=1001\oplus0011=1010$
 
-**Decryption round 1** (undo encryption round 1, using $K_1 = 0110$):
+Round 3 ($K_3=1100$): $L_3=1010$, $R_3=0101\oplus(1010\oplus1100)=0101\oplus0110=0011$
 
-$$R_0 = L_1 = 1100$$
-$$L_0 = R_1 \oplus F(L_1, K_1) = 0000 \oplus (1100 \oplus 0110) = 0000 \oplus 1010 = 1010$$
+**Ciphertext:** $1010\;0011$
 
-**Recovered plaintext:** $(L_0, R_0) = (1010,\; 1100)$ ✓
+**Decryption** — starting from $L_3=1010$, $R_3=0011$, subkeys reversed $K_3,K_2,K_1$:
+
+Dec-round 1 ($K_3=1100$): $R_2=1010$, $L_2=0011\oplus(1010\oplus1100)=0011\oplus0110=0101$
+
+Dec-round 2 ($K_2=0110$): $R_1=0101$, $L_1=1010\oplus(0101\oplus0110)=1010\oplus0011=1001$
+
+Dec-round 3 ($K_1=1010$): $R_0=1001$, $L_0=0101\oplus(1001\oplus1010)=0101\oplus0011=0110$
+
+**Recovered plaintext:** $0110\;1001$ ✓
 ```
 
 ```{exercise} Mode of Operation Security

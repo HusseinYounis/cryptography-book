@@ -44,6 +44,16 @@ No single primitive does everything:
 Real systems use **all three together** — asymmetric to exchange a symmetric key, symmetric for bulk encryption, and hashing for integrity and authentication.
 ```
 
+```{admonition} Learning Objectives
+:class: important
+By the end of this chapter, you will be able to:
+- Identify the three families of modern cryptographic primitives and their distinguishing properties
+- Explain what makes a cipher "modern" versus classical
+- Describe the key distribution problem and explain how public-key cryptography solves it
+- Map each primitive (symmetric, asymmetric, hash) to its primary use cases
+- Describe the hybrid encryption flow and explain why it combines all three primitives
+```
+
 ---
 
 ## Warm-Up: Which Tool for the Job?
@@ -389,6 +399,98 @@ Which of the following tasks require a **hash function**? (Select all that apply
 ```{admonition} Key Insight
 :class: tip
 The **key distribution problem** is the central challenge that asymmetric cryptography solves. Without it, two parties who have never met cannot establish a shared secret — and therefore cannot use symmetric encryption — over a public network. Chapters 9–11 show exactly how this miracle is achieved using mathematical trapdoor functions.
+```
+
+---
+
+## 9. Exercises
+
+```{exercise} Primitive Selection
+:label: ch05-ex-primitive
+
+For each of the following scenarios, identify the most appropriate cryptographic primitive (symmetric cipher, asymmetric cipher, or hash function) and justify your choice:
+
+1. Encrypting a 10 GB database backup stored on a local server.
+2. Allowing a user to log in without storing their password in plaintext.
+3. Two servers on opposite sides of the world need to agree on an encryption key without having shared any secret beforehand.
+4. A software company wants to distribute a software update and guarantee it has not been tampered with.
+5. A messaging app encrypts each message sent between two users who previously exchanged keys.
+```
+
+```{solution} ch05-ex-primitive
+:label: sol-ch05-ex-primitive
+:class: dropdown
+
+1. **Symmetric cipher** (e.g. AES-256-GCM) — fast enough for bulk data; a single device holds the key.
+2. **Hash function** (e.g. Argon2 or bcrypt with salt) — one-way; the server never stores the password, only its digest.
+3. **Asymmetric cipher / key exchange** (e.g. ECDH) — two strangers can establish a shared secret over a public channel without any prior contact.
+4. **Hash function + asymmetric signature** (e.g. SHA-256 + RSA-PSS) — hash the update, sign the digest; users verify the signature with the company's public key.
+5. **Symmetric cipher** — once keys are exchanged, symmetric encryption is used for every subsequent message because it is orders of magnitude faster.
+```
+
+```{exercise} Why Hybrid Encryption?
+:label: ch05-ex-hybrid
+
+TLS (the protocol behind HTTPS) uses asymmetric cryptography during the handshake and symmetric cryptography for the data transfer. Explain:
+
+1. Why asymmetric encryption alone is not used for the entire session.
+2. Why symmetric encryption alone is not used from the start.
+3. What role the asymmetric step plays in the overall hybrid flow.
+```
+
+```{solution} ch05-ex-hybrid
+:label: sol-ch05-ex-hybrid
+:class: dropdown
+
+1. Asymmetric operations (RSA, ECDH) are roughly **1000× slower** than symmetric ones. Encrypting gigabytes of traffic with RSA is computationally prohibitive.
+2. Symmetric encryption requires a **pre-shared key**. Two strangers connecting over the internet have no secure way to agree on one without a prior secure channel — the key distribution problem.
+3. The asymmetric step solves the key distribution problem: the two parties use public-key cryptography (e.g. ECDH) to derive a fresh shared symmetric key for that session. All subsequent data is encrypted with AES using that key. This combines the security of public-key exchange with the speed of symmetric encryption.
+```
+
+```{exercise} The Key Distribution Problem
+:label: ch05-ex-key-dist
+
+Alice wants to send Bob a secret message over the internet. They have never met and share no secret in advance.
+
+1. Explain why they cannot simply use a symmetric cipher without first solving the key distribution problem.
+2. Describe in plain language (no formulas needed) how public-key cryptography solves this problem.
+3. Give one real-world protocol that uses this solution.
+```
+
+```{solution} ch05-ex-key-dist
+:label: sol-ch05-ex-key-dist
+:class: dropdown
+
+1. A symmetric cipher requires both parties to use the **same secret key**. If Alice sends the key to Bob over the public internet, an eavesdropper (Eve) intercepts it and can decrypt every subsequent message. There is no safe way to transmit the key without a pre-existing secure channel — a circular problem.
+
+2. In public-key cryptography, Bob publishes a **public key** that anyone can use to encrypt a message, but only Bob's **private key** can decrypt it. Alice encrypts the session key with Bob's public key and sends it. Eve sees the ciphertext but cannot decrypt it without Bob's private key, which Bob never shares. Bob decrypts to get the session key, and both parties now share a secret.
+
+3. **TLS (HTTPS)** — the server's public key (from its certificate) allows the client to securely establish a session key with the server at the start of every connection.
+```
+
+```{exercise} Primitive Properties Comparison
+:label: ch05-ex-properties
+
+Complete the table by filling in each cell with the correct value:
+
+| Property | Symmetric Cipher | Asymmetric Cipher | Hash Function |
+|:---|:---:|:---:|:---:|
+| Number of keys | ? | ? | ? |
+| Reversible? | ? | ? | ? |
+| Relative speed | ? | ? | ? |
+| Primary use | ? | ? | ? |
+```
+
+```{solution} ch05-ex-properties
+:label: sol-ch05-ex-properties
+:class: dropdown
+
+| Property | Symmetric Cipher | Asymmetric Cipher | Hash Function |
+|:---|:---:|:---:|:---:|
+| Number of keys | 1 (shared) | 2 (public + private) | 0 (keyless) |
+| Reversible? | Yes (with key) | Yes (with private key) | No (one-way) |
+| Relative speed | Fast | ~1000× slower | Fast |
+| Primary use | Bulk encryption | Key exchange, signatures | Integrity, passwords |
 ```
 
 ---

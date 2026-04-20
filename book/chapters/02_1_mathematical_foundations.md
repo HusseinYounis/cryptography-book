@@ -7,6 +7,39 @@
 
 ---
 
+::::{grid} 1 2 2 3
+:gutter: 3
+
+:::{grid-item-card} ➕ Modular Arithmetic
+"Clock arithmetic" — the foundation of every cryptographic algorithm from Caesar shifts to RSA.
+:::
+
+:::{grid-item-card} 📐 GCD & Euclidean Algorithm
+Efficiently finding the greatest common divisor, essential for co-primality checks and modular inverses.
+:::
+
+:::{grid-item-card} 🔗 Co-Prime Numbers
+When $\gcd(a,b)=1$ — the prerequisite for modular inverses and RSA key generation.
+:::
+
+:::{grid-item-card} 🔢 Euler's Totient & Theorem
+$\phi(n)$ counts co-primes less than $n$; Euler's Theorem is the mathematical heart of RSA decryption.
+:::
+
+::::
+
+```{admonition} Learning Objectives
+:class: tip
+By the end of this chapter you will be able to:
+- Compute $a \bmod n$ and apply modular arithmetic properties (addition, subtraction, multiplication)
+- Find the GCD of two numbers using the listing method, prime factorisation, and the Euclidean algorithm
+- Determine whether two numbers are relatively prime (co-prime)
+- Compute $\phi(n)$ for small values of $n$ and apply the prime formula $\phi(p) = p-1$
+- State Euler's Theorem and verify it with worked examples
+```
+
+---
+
 ## Warm-Up: The Clock Puzzle
 
 It is currently **11 o'clock**. What time will it be **15 hours** from now?

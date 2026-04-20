@@ -7,6 +7,38 @@
 
 ---
 
+::::{grid} 2
+
+:::{grid-item-card} Binary & Number Systems
+Working with binary, decimal, and hexadecimal representations that underlie all cryptographic data.
+:::
+
+:::{grid-item-card} Logic Gates
+Boolean logic operations (AND, OR, XOR, NOT) as the hardware building blocks of cryptographic circuits.
+:::
+
+:::{grid-item-card} Bitwise Operations
+Applying logic gates at the bit level for efficient cryptographic mixing, masking, and permuting.
+:::
+
+:::{grid-item-card} Character Encoding
+ASCII and Unicode mappings from human-readable text to the byte sequences processed by ciphers.
+:::
+
+::::
+
+```{admonition} Learning Objectives
+:class: important
+By the end of this chapter, you will be able to:
+- Convert numbers between binary, decimal, and hexadecimal representations
+- Describe the function of each basic logic gate (AND, OR, XOR, NOT, NAND, NOR)
+- Perform bitwise AND, OR, XOR, and shift operations on binary values
+- Explain why XOR is self-inverse and describe its role in stream ciphers
+- Encode a string using ASCII and convert characters to their binary representation
+```
+
+---
+
 ## Warm-Up: Everything Is a Number
 
 What does the computer actually store when you type the letter **"A"**?
@@ -327,14 +359,20 @@ ASCII code: 65 → Hexadecimal (2-digit): 41
 
 ## Exercises
 
-**Exercise 1.** Convert the following:
+```{exercise} Number System Conversions
+:label: ch02-2-ex-convert
+
+Convert the following:
 - (a) $1101_2$ to decimal
 - (b) $47_{10}$ to binary
 - \(c) $3F_{16}$ to binary
 - (d) $10110110_2$ to hexadecimal
+```
 
-```{admonition} Solutions
+```{solution} ch02-2-ex-convert
+:label: sol-ch02-2-ex-convert
 :class: dropdown
+
 (a) $1101_2 = 8+4+1 = 13_{10}$
 
 (b) $47 \div 2$: remainders bottom-to-top → $101111_2$
@@ -344,14 +382,20 @@ ASCII code: 65 → Hexadecimal (2-digit): 41
 (d) Group: $1011\ 0110$ → $B6_{16}$
 ```
 
-**Exercise 2.** Compute the following bitwise operations on $a = 0b10110100$ (= 180) and $b = 0b00111001$ (= 57):
+```{exercise} Bitwise Operations
+:label: ch02-2-ex-bitwise
+
+Compute the following bitwise operations on $a = 0b10110100$ (= 180) and $b = 0b00111001$ (= 57):
 - (a) $a$ AND $b$
 - (b) $a$ OR $b$
 - \(c) $a$ XOR $b$
 - (d) $a$ right-shifted by 2
+```
 
-```{admonition} Solutions
+```{solution} ch02-2-ex-bitwise
+:label: sol-ch02-2-ex-bitwise
 :class: dropdown
+
 ~~~
   a: 10110100
   b: 00111001
@@ -363,7 +407,10 @@ ASCII code: 65 → Hexadecimal (2-digit): 41
 ~~~
 ```
 
-**Exercise 3.** Fill in the truth table for XOR:
+```{exercise} XOR Truth Table and Self-Inverse
+:label: ch02-2-ex-xor
+
+Fill in the truth table for XOR:
 
 | A | B | A XOR B |
 |:---:|:---:|:---:|
@@ -373,9 +420,12 @@ ASCII code: 65 → Hexadecimal (2-digit): 41
 | 1 | 1 | ? |
 
 Then explain why XOR is self-inverse: $(P \oplus K) \oplus K = P$.
+```
 
-```{admonition} Solution
+```{solution} ch02-2-ex-xor
+:label: sol-ch02-2-ex-xor
 :class: dropdown
+
 | A | B | A XOR B |
 |:---:|:---:|:---:|
 | 0 | 0 | 0 |
@@ -386,13 +436,19 @@ Then explain why XOR is self-inverse: $(P \oplus K) \oplus K = P$.
 For self-inverse: $P \oplus K$ flips the bits of $P$ wherever $K=1$. Then XOR-ing again with the same $K$ flips those same bits back, restoring $P$ exactly. Formally, $x \oplus x = 0$ for any $x$, so $(P \oplus K) \oplus K = P \oplus (K \oplus K) = P \oplus 0 = P$.
 ```
 
-**Exercise 4.** Write the string `"HI"` as:
+```{exercise} ASCII String Encoding
+:label: ch02-2-ex-ascii
+
+Write the string `"HI"` as:
 - (a) ASCII decimal values
 - (b) 8-bit binary
 - \(c) Hexadecimal
+```
 
-```{admonition} Solution
+```{solution} ch02-2-ex-ascii
+:label: sol-ch02-2-ex-ascii
 :class: dropdown
+
 (a) H=72, I=73
 
 (b) H: 01001000, I: 01001001
@@ -400,10 +456,16 @@ For self-inverse: $P \oplus K$ flips the bits of $P$ wherever $K=1$. Then XOR-in
 \(c) H: 48, I: 49 (hex)
 ```
 
-**Exercise 5.** Encrypt the byte `P = 0b10110011` (= 179) with the key `K = 0b11001010` (= 202) using XOR. Then decrypt by XOR-ing the ciphertext with the same key. Verify you recover $P$.
+```{exercise} XOR Encryption and Decryption
+:label: ch02-2-ex-encryption
 
-```{admonition} Solution
+Encrypt the byte $P = 0b10110011$ (= 179) with the key $K = 0b11001010$ (= 202) using XOR. Then decrypt by XOR-ing the ciphertext with the same key. Verify you recover $P$.
+```
+
+```{solution} ch02-2-ex-encryption
+:label: sol-ch02-2-ex-encryption
 :class: dropdown
+
 ~~~
   P: 10110011
   K: 11001010

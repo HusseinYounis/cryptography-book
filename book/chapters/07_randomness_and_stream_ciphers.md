@@ -28,6 +28,21 @@ By the end of this chapter you will be able to:
 
 ---
 
+## Warm-Up: Predict the Next Number
+
+A program uses `rand()` to generate encryption keys. Its first output is **1250496027**. Without knowing the seed, can an attacker predict the next value? What does this imply about using `rand()` for cryptography?
+
+```{admonition} Solution
+:class: dropdown
+Yes — `rand()` typically uses a **Linear Congruential Generator (LCG)** whose full state is a single integer. Given $x_0 = 1250496027$, the next value is deterministic:
+
+$$x_1 = (1103515245 \times 1250496027 + 12345) \bmod 2^{31} = 1082907587$$
+
+An attacker who captures one `rand()` output can predict **all future outputs indefinitely** and reconstruct all past outputs. This makes `rand()` completely unsuitable for any security-sensitive value — keys, nonces, session tokens, or anything that must be unpredictable.
+```
+
+---
+
 ## 1. What Is Randomness?
 
 In everyday language, "random" means *unpredictable*. A cryptographer is more precise:

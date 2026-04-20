@@ -49,6 +49,16 @@ Historical ciphers teach fundamental lessons:
 - Foundation concepts for modern algorithms
 ```
 
+```{admonition} Learning Objectives
+:class: important
+By the end of this chapter, you will be able to:
+- Encrypt and decrypt messages using the Caesar and Affine ciphers
+- Apply frequency analysis to break monoalphabetic substitution ciphers
+- Describe the Vigenère cipher and its Tabula Recta construction
+- Use the Kasiski test and Index of Coincidence to find a Vigenère key length
+- Distinguish substitution from transposition ciphers and explain each cipher's weaknesses
+```
+
 ---
 
 ## Warm-Up: Can You Break This?
@@ -917,17 +927,7 @@ Read columns **in key order 1, 2, 3, 4**:
 Modern block ciphers (like AES) use multiple rounds of substitution and permutation—this is a form of product cipher.
 ```
 
-## 6. Breaking Classical Ciphers: Summary
-
-| Cipher Type | Primary Weakness | Attack Method |
-|-------------|------------------|---------------|
-| Caesar | Small key space | Brute force |
-| Affine | Small key space | Brute force or frequency analysis |
-| Substitution | Letter frequencies | Frequency analysis |
-| Vigenère | Repeating key | Kasiski, IC, frequency analysis |
-| Transposition | Pattern preservation | Anagramming, pattern recognition |
-
-## 7. Historical Cryptanalysis
+## 6. Historical Cryptanalysis
 
 ### The Enigma Machine
 
@@ -939,7 +939,7 @@ The German Enigma machine was considered unbreakable but was eventually cracked 
 - Known plaintext attacks
 - Cribs (guessed plaintext sections)
 
-## 8. Lessons for Modern Cryptography
+## 7. Lessons for Modern Cryptography
 
 Classical ciphers teach us:
 
@@ -948,7 +948,7 @@ Classical ciphers teach us:
 3. **Statistical properties persist** - Even with substitution
 4. **Randomness is crucial** - Patterns can be exploited
 
-## 9. Summary
+## 8. Summary
 
 ::::{grid} 2
 :gutter: 2
@@ -973,6 +973,16 @@ Classical ciphers teach us:
 
 ::::
 
+**Cipher Weaknesses and Attack Methods**
+
+| Cipher Type | Primary Weakness | Attack Method |
+|-------------|------------------|---------------|
+| Caesar | Small key space | Brute force |
+| Affine | Small key space | Brute force or frequency analysis |
+| Substitution | Letter frequencies | Frequency analysis |
+| Vigenère | Repeating key | Kasiski, IC, frequency analysis |
+| Transposition | Pattern preservation | Anagramming, pattern recognition |
+
 Classical ciphers introduced:
 - ✅ Substitution ciphers (Caesar, Affine, General)
 - ✅ Frequency analysis techniques
@@ -985,7 +995,7 @@ Classical ciphers introduced:
 In the next chapter, we'll dive deeper into cryptanalysis and learn systematic approaches to breaking ciphers.
 ```
 
-## 10. Exercises
+## 9. Exercises
 
 ```{exercise} Decrypt a Caesar Cipher
 :label: ch03-ex-caesar-decrypt

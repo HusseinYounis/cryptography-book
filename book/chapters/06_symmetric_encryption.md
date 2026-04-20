@@ -114,6 +114,7 @@ The **one-time pad** over $\{0,1\}^n$ is the simplest symmetric-key encryption s
 - $\text{Dec}_k(c) = c \oplus k$
 
 **Correctness check:**
+
 $$\text{Dec}_k(\text{Enc}_k(m)) = (m \oplus k) \oplus k = m \oplus (k \oplus k) = m \oplus 0^n = m \checkmark$$
 
 **Key space:** $\mathcal{K} = \{0,1\}^n$ — the key is as long as the message.
@@ -303,6 +304,59 @@ $$\text{Dec}_k(c, \tau, a) \to m \text{ or } \bot$$
 $\text{Dec}$ returns $\bot$ (reject) if the tag $\tau$ does not verify — detecting any tampering with $c$ or $a$.
 
 Standard AEAD ciphers: **AES-GCM**, **ChaCha20-Poly1305**.
+```
+
+```{prf:example} AEAD in Action — Tamper Detection (Binary Walk-Through)
+:label: ex-aead-tamper
+
+We use **4-bit values** throughout to keep every step fully visible. Real AEAD (e.g. AES-GCM) works identically at 128 bits.
+
+**Setup:**
+
+| Symbol | Value | Meaning |
+|:---|:---:|:---|
+| $m$ | $\mathtt{1011}$ | plaintext — Alice's message ("pay \$3") |
+| $a$ | $\mathtt{0101}$ | associated data — header ("session-id: 5"), sent in the clear |
+| $k_{\text{enc}}$ | $\mathtt{1100}$ | encryption key (shared secret) |
+| $k_{\text{tag}}$ | $\mathtt{0110}$ | authentication key (shared secret) |
+
+**Step 1 — Alice encrypts and tags:**
+
+Encryption is XOR with the key (like a one-time pad):
+
+$$c \;=\; m \oplus k_{\text{enc}} \;=\; \mathtt{1011} \oplus \mathtt{1100} \;=\; \mathtt{0111}$$
+
+The **authentication tag** is a keyed checksum computed over both the ciphertext and the associated data:
+
+$$\tau \;=\; (c \oplus a) \oplus k_{\text{tag}} \;=\; (\mathtt{0111} \oplus \mathtt{0101}) \oplus \mathtt{0110} \;=\; \mathtt{0010} \oplus \mathtt{0110} \;=\; \mathtt{0100}$$
+
+Alice sends the triple $(c,\, \tau,\, a) = (\mathtt{0111},\, \mathtt{0100},\, \mathtt{0101})$.
+
+**Step 2 — Eve intercepts and flips one bit:**
+
+Eve wants to change the payment amount. She flips the first bit of $c$:
+
+$$c' \;=\; \mathtt{1111}$$
+
+Eve hopes this decrypts to a larger value. She has no key, so she re-uses Alice's original tag:
+
+$$(c',\, \tau,\, a) \;=\; (\mathtt{1111},\, \mathtt{0100},\, \mathtt{0101}) \quad \leftarrow \text{Eve's forged packet}$$
+
+**Step 3 — Server verifies the tag:**
+
+The server recomputes the expected tag from the received ciphertext:
+
+$$\tau' \;=\; (c' \oplus a) \oplus k_{\text{tag}} \;=\; (\mathtt{1111} \oplus \mathtt{0101}) \oplus \mathtt{0110} \;=\; \mathtt{1010} \oplus \mathtt{0110} \;=\; \mathtt{1100}$$
+
+Comparison:
+
+$$\tau' = \mathtt{1100} \;\neq\; \tau = \mathtt{0100} \;\implies\; \text{Dec}_k(c', \tau, a) = \bot \quad \text{(REJECT)}$$
+
+The server **discards the packet** — the modified ciphertext is never decrypted.
+
+**Why Eve cannot forge the tag:** without $k_{\text{tag}}$ she would have to guess $\tau'$ correctly. With a 4-bit tag the chance is $\tfrac{1}{16}$; with a real 128-bit tag it drops to $\tfrac{1}{2^{128}} \approx 10^{-38}$.
+
+**Key takeaway:** the tag binds $\tau$ to every bit of both $c$ and $a$. Changing either one — even by a single bit — produces a different tag, and $\text{Dec}$ outputs $\bot$ instead of a forged plaintext.
 ```
 
 ---

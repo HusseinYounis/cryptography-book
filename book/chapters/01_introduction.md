@@ -7,6 +7,40 @@
 
 ---
 
+::::{grid} 1 2 2 3
+:gutter: 3
+
+:::{grid-item-card} 🔒 What Is Cryptography?
+Definitions, goals, and the five primary functions of cryptographic systems.
+:::
+
+:::{grid-item-card} 🛡️ CIA Triad
+The three pillars of information security and how cryptography addresses each one.
+:::
+
+:::{grid-item-card} 🔑 Types of Cryptography
+Symmetric, asymmetric, and hybrid encryption — when and why each is used.
+:::
+
+:::{grid-item-card} 📐 Kerckhoffs's Principle
+Why security must depend only on the key, never on algorithm secrecy.
+:::
+
+::::
+
+```{admonition} Learning Objectives
+:class: tip
+By the end of this chapter you will be able to:
+- Define cryptography and distinguish it from cryptanalysis and cryptology
+- List the five primary functions of cryptography (Confidentiality, Authentication, Integrity, Non-repudiation, Key Exchange)
+- Explain the CIA Triad and map cryptographic tools to each pillar
+- Describe the three types of cryptography (symmetric, asymmetric, hybrid) and when to use each
+- State Kerckhoffs's Principle and explain why it is the foundation of modern cipher design
+- Understand the basic cryptographic process: $C = E_K(P)$ and $P = D_K(C)$
+```
+
+---
+
 ## Warm-Up: The Hidden Message
 
 A friend wrote down:
@@ -222,11 +256,7 @@ Uses the **same key** for both encryption and decryption.
 
 *Symmetric Encryption: Shared Secret Key*
 
-| Advantages | Disadvantages |
-|------------|--------------|
-| Fast and efficient | Key distribution problem |
-| Suitable for large amounts of data | Requires secure channel for key exchange |
-| Low computational overhead | Need separate keys for each pair of communicators |
+Symmetric ciphers are **fast and efficient**, making them ideal for encrypting large amounts of data. The main challenge is the **key distribution problem**: both parties must share the same secret key before they can communicate securely.
 
 **Examples:** AES, DES, ChaCha20
 
@@ -242,11 +272,7 @@ Uses a **key pair**: a public key for encryption and a private key for decryptio
 
 *Asymmetric Encryption: Public/Private Key Pair*
 
-| Advantages | Disadvantages |
-|------------|--------------|
-| Solves key distribution problem | Slower than symmetric encryption |
-| Enables digital signatures | More computationally intensive |
-| No secure channel needed for public key | Limited message size |
+Asymmetric ciphers use a **key pair** (public key for encryption, private key for decryption), solving the key distribution problem. They are significantly slower than symmetric ciphers and are primarily used for key exchange and digital signatures.
 
 **Examples:** RSA, Diffie-Hellman, Elliptic Curve Cryptography
 
@@ -319,78 +345,15 @@ $$\text{Open Algorithms} + \text{Secret Keys} + \text{Hard Math} + \text{True Ra
 
 ## 11. Threat Models
 
-Understanding potential attackers is crucial for evaluating the strength of a cryptosystem.
+Understanding potential attackers is crucial for evaluating any cryptosystem. Attackers are classified by what they can observe or control — ranging from a **ciphertext-only** eavesdropper (sees only the encrypted message) to a **chosen-ciphertext** adversary (can submit ciphertexts for decryption).
 
-### Ciphertext-Only Attack
-The adversary has access **only to ciphertext**. They must deduce the plaintext or key without any knowledge of the underlying plaintext.
-
-### Known-Plaintext Attack
-The adversary has access to **some plaintext–ciphertext pairs**. They use these pairs to deduce the key or decrypt other ciphertexts.
-
-### Chosen-Plaintext Attack
-The adversary can **choose arbitrary plaintexts** and obtain their corresponding ciphertexts. This is a stronger model — it simulates attackers who can influence what gets encrypted.
-
-### Chosen-Ciphertext Attack
-The adversary can **choose arbitrary ciphertexts** and obtain their corresponding plaintexts (except the target ciphertext). This is the strongest standard model.
-
-| Attack Type | Adversary Has Access To |
-|---|---|
-| Ciphertext-Only | Ciphertext only |
-| Known-Plaintext | Some plaintext–ciphertext pairs |
-| Chosen-Plaintext | Plaintexts of their choice + ciphertexts |
-| Chosen-Ciphertext | Ciphertexts of their choice + plaintexts |
+The four standard attack models — **COA**, **KPA**, **CPA**, and **CCA** — form a strict hierarchy of adversarial power. They are formally defined with examples and interactive exercises in **Chapter 4**.
 
 ---
 
-## 12. Shannon's Theorem and Perfect Secrecy
+## 12. Perfect Secrecy — A Preview
 
-In 1948, Claude Shannon published *A Mathematical Theory of Communication*, founding information-theoretic cryptography.
-
-```{prf:theorem} Shannon's Perfect Secrecy
-:label: thm-shannon
-
-A cryptosystem has **perfect secrecy** if observing the ciphertext gives an attacker **absolutely no additional information** about the plaintext, regardless of computational power.
-
-Formally, for all plaintexts $m$ and all ciphertexts $c$:
-
-$$\Pr[M = m \mid C = c] = \Pr[M = m]$$
-
-The probability of a message being $m$ is the **same** whether or not the attacker sees the ciphertext.
-```
-
-### Intuition: What Perfect Secrecy Means
-
-- **Before** seeing the ciphertext: the attacker has some belief about what the message might be
-- **After** seeing the ciphertext: the attacker's belief is **completely unchanged**
-- Even with **unlimited computational power**, the attacker cannot do better than random guessing
-
-Equivalently, for all ciphertexts $c$ and all pairs of messages $m_1, m_2$:
-
-$$\Pr[M = m_1 \mid C = c] = \Pr[M = m_2 \mid C = c]$$
-
-Every ciphertext is equally likely to have come from any plaintext.
-
-### Why Perfect Secrecy Requires Many Keys
-
-```{prf:example} Why Fewer Keys Than Messages Breaks Secrecy
-:label: ex-fewer-keys
-
-Imagine encoding food orders: {PIZZA, PASTA, SALAD, BURGER, TACOS} — 5 messages.
-But you only have **3 keys**: RED, BLUE, GREEN.
-
-Suppose:
-- PASTA + RED → XGTRP
-- XGTRP + BLUE → BURGER
-- XGTRP + GREEN → PIZZA
-
-**Problem:** SALAD and TACOS can *never* produce ciphertext XGTRP with any key!
-
-$$\Pr[\text{SALAD} \mid \text{see XGTRP}] = 0\% \quad \text{but} \quad \Pr[\text{SALAD}] = 20\%$$
-
-These are **different** — the ciphertext gave information. Perfect secrecy is violated.
-
-**Conclusion:** For perfect secrecy, $|\text{Keys}| \geq |\text{Messages}|$.
-```
+In 1949, Claude Shannon proved that a cipher can achieve **perfect secrecy** — meaning that observing the ciphertext provides an attacker with *zero* additional information about the plaintext, regardless of computational power. This theoretical ideal requires the key to be at least as long as the message and used only once (the One-Time Pad). The formal definition, proof, and practical implications are fully covered in **Chapter 4**.
 
 ---
 
@@ -404,7 +367,8 @@ These are **different** — the ciphertext gave information. Perfect secrecy is 
 - **Cryptographic process**: $C = E_K(P)$ and $P = D_K(C)$
 - **Three types**: Symmetric (fast, shared key), Asymmetric (key pair, solves distribution), Hybrid (both combined)
 - **Kerckhoffs's Principle**: security depends only on the key, never on the algorithm
-- **Shannon's Perfect Secrecy**: ciphertext reveals zero information about plaintext; requires $|\text{Keys}| \geq |\text{Messages}|$
+- **Threat Models**: four attack scenarios (COA, KPA, CPA, CCA) — formally defined in Chapter 4
+- **Perfect Secrecy**: Shannon's ideal cipher leaking zero information — fully treated in Chapter 4
 ```
 
 ---
@@ -503,25 +467,6 @@ This violates Kerckhoffs's Principle because security relies on the algorithm re
 - **Historical precedent**: Many "secret" algorithms (e.g., RC4 internal state, Skipjack) were eventually revealed and found to be weak.
 
 Kerckhoffs's Principle demands that security depend *only* on the key.
-```
-
-```{exercise} Perfect Secrecy and Key Count
-:label: ch01-perfect-secrecy
-
-Suppose you have 4 possible messages $\{M_1, M_2, M_3, M_4\}$ and only 3 keys $\{K_1, K_2, K_3\}$. Can this system achieve perfect secrecy? Justify your answer using Shannon's theorem.
-```
-
-```{solution} ch01-perfect-secrecy
-:label: sol-ch01-perfect-secrecy
-:class: dropdown
-
-**No**, this system cannot achieve perfect secrecy.
-
-By Shannon's theorem ({prf:ref}`thm-shannon`), perfect secrecy requires at least as many keys as messages:
-
-$$|\text{Keys}| \geq |\text{Messages}|$$
-
-Here $|\text{Keys}| = 3 < 4 = |\text{Messages}|$, so by the pigeonhole principle, at least one ciphertext $c$ cannot be produced from all 4 messages. An attacker who sees $c$ can therefore eliminate that message with probability 0, but its prior probability was $> 0$. The posterior and prior probabilities differ — perfect secrecy is violated.
 ```
 
 ```{exercise} HTTPS Hybrid Cryptography

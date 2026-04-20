@@ -52,6 +52,17 @@ A cipher is only trustworthy if it has resisted serious attempts to break it. St
 - How the field has evolved from simple pattern-matching to complex algebraic attacks
 ```
 
+```{admonition} Learning Objectives
+:class: important
+By the end of this chapter, you will be able to:
+- Classify the four attack models (COA, KPA, CPA, CCA) and explain their hierarchy
+- Perform frequency analysis on monoalphabetic ciphertext using the ETAOIN SHRDLU ranking
+- Compute the Index of Coincidence and interpret its value for a given ciphertext
+- Apply the Kasiski test to estimate the key length of a Vigenère cipher
+- State Shannon's definition of perfect secrecy and his necessary conditions
+- Distinguish perfect secrecy from computational security
+```
+
 ---
 
 ## Warm-Up: Name That Attack
@@ -552,21 +563,7 @@ $$\varepsilon(n) < \frac{1}{p(n)}$$
 Informally, $\varepsilon(n)$ decreases faster than any inverse polynomial. Security parameter $n$ controls key length; larger $n$ makes $\varepsilon$ vanishingly small.
 ```
 
-```{prf:definition} Computational (Semantic) Security
-:label: def-comp-security
-
-A cipher is **computationally secure** (IND-CPA) if every **probabilistic polynomial-time** adversary $\mathcal{A}$ wins the following game with probability at most $\frac{1}{2} + \varepsilon(n)$ for a negligible $\varepsilon$:
-
-1. Challenger generates key $k$.
-2. $\mathcal{A}$ outputs two messages $m_0, m_1$ of equal length.
-3. Challenger picks $b \xleftarrow{R} \{0,1\}$, sends $c^* = \text{Enc}_k(m_b)$ to $\mathcal{A}$.
-4. $\mathcal{A}$ outputs a guess $b'$; she wins if $b' = b$.
-```
-
-```{admonition} Why This Matters in Cryptography
-:class: important
-IND-CPA is the *minimum* meaningful security notion for a symmetric cipher used in practice. AES in CTR or CBC mode (with random IV) satisfies IND-CPA under the assumption that AES is a pseudorandom permutation.
-```
+The practical relaxation of perfect secrecy is **IND-CPA (Indistinguishability under Chosen-Plaintext Attack)**, where security holds against computationally bounded adversaries rather than unbounded ones. The formal IND-CPA game, negligible advantage bounds, and construction requirements are fully defined in **Chapter 6**.
 
 ### 7.1 Security Levels
 

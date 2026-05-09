@@ -361,60 +361,13 @@ The server **discards the packet** — the modified ciphertext is never decrypte
 
 ---
 
-## 3. Stream Ciphers vs Block Ciphers
+```{admonition} Two Families: Stream Ciphers and Block Ciphers
+:class: note
+Symmetric ciphers split into two families based on how they process data:
 
-Symmetric ciphers are implemented in two fundamentally different ways. This section introduces both at a conceptual level; the full constructions are in the next two chapters.
-
-```{prf:definition} Stream Cipher
-:label: def-stream-cipher-concept
-
-A **stream cipher** uses a short key $k$ (and a nonce $r$) to expand a **pseudorandom keystream** $z = G(k, r)$ of any desired length, then XOR-s it with the plaintext:
-
-$$c_i = m_i \oplus z_i$$
-
-Stream ciphers operate on **individual bits or bytes** and produce ciphertext as fast as data arrives.
-
-→ *Detailed treatment: Chapter 7*
+- **Stream ciphers** (Chapter 7) — encrypt bit-by-bit or byte-by-byte using a pseudorandom keystream; ideal for real-time, low-latency data (e.g., ChaCha20 in TLS).
+- **Block ciphers** (Chapter 8) — encrypt fixed-size blocks (128 bits for AES) using a keyed permutation; used for bulk storage encryption and as building blocks for MACs.
 ```
-
-```{prf:definition} Block Cipher
-:label: def-block-cipher-concept
-
-A **block cipher** $E : \mathcal{K} \times \{0,1\}^n \to \{0,1\}^n$ is a **keyed permutation** on fixed-size blocks of $n$ bits. To encrypt messages longer than $n$ bits, a **mode of operation** is applied.
-
-Block ciphers process data in chunks (128 bits for AES) and are typically used for storage encryption and as building blocks for MACs and hash functions.
-
-→ *Detailed treatment: Chapter 8*
-```
-
-| Property | Stream Cipher | Block Cipher |
-|:---|:---:|:---:|
-| Granularity | Bit / byte | Fixed block (128 bits) |
-| Latency | Very low | Low |
-| Parallelisable | Sometimes (CTR-like) | Yes (ECB, CTR modes) |
-| Built-in authentication | No (needs Poly1305 etc.) | GCM mode adds it |
-| Best use case | Real-time streams, TLS records | File encryption, disk encryption |
-| Examples | ChaCha20, Salsa20 | AES, DES |
-
-::::{question} Stream Cipher vs Block Cipher
-:type: multiple-choice
-:variant: single-select
-:showanswer:
-
-A developer is building a real-time voice-over-IP (VoIP) application that must encrypt audio packets as they arrive, with minimal latency. Which cipher family is the better fit?
----
-[x] Stream cipher
-> Correct! Stream ciphers encrypt bit-by-bit (or byte-by-byte) as data arrives, making them ideal for low-latency real-time streams. ChaCha20 is the standard choice for exactly this use case (used in TLS 1.3 for HTTPS).
-[ ] Block cipher in ECB mode
-> ECB is insecure regardless of cipher — identical blocks produce identical ciphertext. Never use ECB.
-[ ] Block cipher in CBC mode
-> CBC is sequential and requires buffering a full 128-bit block before encrypting, introducing latency unsuitable for real-time audio.
-[ ] It makes no difference — all symmetric ciphers have the same latency.
-> Latency differs significantly: stream ciphers process data one byte at a time while block ciphers must accumulate a full block.
----
-::::
-
----
 
 ## 4. The Key Distribution Problem
 

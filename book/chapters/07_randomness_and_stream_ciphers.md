@@ -9,7 +9,7 @@ kernelspec:
   name: python3
 ---
 
-# Chapter 7: Randomness, PRNG, One-Time Pad, and Stream Ciphers
+# Chapter 7: Randomness and Stream Ciphers
 
 ## Introduction
 
@@ -239,7 +239,18 @@ The operating system continuously mixes these sources into an **entropy pool**, 
 
 ## 5. The One-Time Pad (OTP)
 
+Joseph Mauborgne proposed an improvement to the Vernam cipher that yields the ultimate in security. Mauborgne suggested using a **random key that is as long as the message**, so that the key need not be repeated. In addition, the key is to be used to encrypt and decrypt a single message, and then is discarded. Each new message requires a new key of the same length as the new message.
+
+Such a scheme, known as a **one-time pad**, is unbreakable. It produces random output that bears no statistical relationship to the plaintext. Because the ciphertext contains no information whatsoever about the plaintext, there is simply no way to break the code.
+
 The **One-Time Pad** is the only encryption scheme proven to be **perfectly secure** — even against an attacker with unlimited computation.
+
+The security of the one-time pad is entirely due to the randomness of the key. If the stream of characters that constitute the key is truly random, then the stream of characters that constitute the ciphertext will be truly random. Thus, there are no patterns or regularities that a cryptanalyst can use to attack the ciphertext.
+
+The one-time pad offers complete security but, in practice, has two fundamental difficulties:
+
+1. **Key generation:** There is the practical problem of making large quantities of random keys. Any heavily used system might require millions of random characters on a regular basis. Supplying truly random characters in this volume is a significant task.
+2. **Key distribution:** Even more daunting is the problem of key distribution and protection. For every message to be sent, a key of equal length is needed by both sender and receiver. Thus, a mammoth key distribution problem exists.
 
 ### 5.1 How OTP Works
 
@@ -275,6 +286,57 @@ flowchart LR
     style XOR_E fill:#457b9d,color:#fff,stroke:#1d3557
     style XOR_D fill:#457b9d,color:#fff,stroke:#1d3557
     style PLAIN2 fill:#52b788,color:#fff,stroke:#2d6a4f
+```
+
+### 5.1 Solved Example — OTP Encryption and Decryption
+
+```{prf:example} One-Time Pad — Step-by-Step
+:label: ex-otp-solved
+
+**Problem:** Encrypt the plaintext `"HELLO"` using the one-time pad with the key `"XMCKL"`.
+
+---
+
+**Step 1 — Convert letters to numbers** (A = 0, B = 1, …, Z = 25):
+
+| | H | E | L | L | O |
+|---|---|---|---|---|---|
+| **Plaintext (P)** | 7 | 4 | 11 | 11 | 14 |
+| **Key (K)** | 23 | 12 | 2 | 10 | 11 |
+
+---
+
+**Step 2 — Encrypt:** $C_i = (P_i + K_i) \bmod 26$
+
+| | H | E | L | L | O |
+|---|---|---|---|---|---|
+| $P_i$ | 7 | 4 | 11 | 11 | 14 |
+| $K_i$ | 23 | 12 | 2 | 10 | 11 |
+| $P_i + K_i$ | 30 | 16 | 13 | 21 | 25 |
+| $C_i = (P_i + K_i) \bmod 26$ | **4** | **16** | **13** | **21** | **25** |
+| **Ciphertext letter** | **E** | **Q** | **N** | **V** | **Z** |
+
+**Ciphertext: `EQNVZ`**
+
+---
+
+**Step 3 — Decrypt:** $P_i = (C_i - K_i) \bmod 26$
+
+| | E | Q | N | V | Z |
+|---|---|---|---|---|---|
+| $C_i$ | 4 | 16 | 13 | 21 | 25 |
+| $K_i$ | 23 | 12 | 2 | 10 | 11 |
+| $C_i - K_i$ | −19 | 4 | 11 | 11 | 14 |
+| $P_i = (C_i - K_i) \bmod 26$ | **7** | **4** | **11** | **11** | **14** |
+| **Plaintext letter** | **H** | **E** | **L** | **L** | **O** |
+
+**Recovered plaintext: `HELLO`** ✓
+
+---
+
+**Key observations:**
+- The key is used **once only** and then discarded.
+- Without the key, every 5-letter word is equally likely to be the plaintext — perfect secrecy holds.
 ```
 
 ### 5.2 Formal Definition of Perfect Secrecy
@@ -555,6 +617,87 @@ print(f"Match:      {recovered == message}")
 
 ---
 
+### 7.5 Solved Example — RC4 Step by Step (Toy N = 8)
+
+To keep the walkthrough human-traceable, we use a **toy version of RC4 with N = 8** — the state array `S` holds 8 entries (0–7) and all arithmetic is **mod 8**. Real RC4 uses N = 256 with mod 256; the algorithm structure is identical.
+
+**Given:**
+
+| Parameter | Value |
+|:---|:---|
+| N | 8 |
+| Key | `[1, 2, 3]` |
+| Plaintext | `"Hi"` = \[72, 105\] |
+
+---
+
+#### Phase 1 — Key Scheduling Algorithm (KSA)
+
+**Initialise:** `S = [0, 1, 2, 3, 4, 5, 6, 7]`, `j = 0`
+
+For each `i` from 0 to 7: `j = (j + S[i] + key[i mod 3]) mod 8`, then swap `S[i] ↔ S[j]`.
+
+| i | key[i mod 3] | j_old | j_new | Swap | S after swap |
+|:---:|:---:|:---:|:---:|:---:|:---|
+| 0 | 1 | 0 | (0+0+1) mod 8 = **1** | S[0] ↔ S[1] | `[1, 0, 2, 3, 4, 5, 6, 7]` |
+| 1 | 2 | 1 | (1+0+2) mod 8 = **3** | S[1] ↔ S[3] | `[1, 3, 2, 0, 4, 5, 6, 7]` |
+| 2 | 3 | 3 | (3+2+3) mod 8 = **0** | S[2] ↔ S[0] | `[2, 3, 1, 0, 4, 5, 6, 7]` |
+| 3 | 1 | 0 | (0+0+1) mod 8 = **1** | S[3] ↔ S[1] | `[2, 0, 1, 3, 4, 5, 6, 7]` |
+| 4 | 2 | 1 | (1+4+2) mod 8 = **7** | S[4] ↔ S[7] | `[2, 0, 1, 3, 7, 5, 6, 4]` |
+| 5 | 3 | 7 | (7+5+3) mod 8 = **7** | S[5] ↔ S[7] | `[2, 0, 1, 3, 7, 4, 6, 5]` |
+| 6 | 1 | 7 | (7+6+1) mod 8 = **6** | S[6] ↔ S[6] | `[2, 0, 1, 3, 7, 4, 6, 5]` *(no change)* |
+| 7 | 2 | 6 | (6+5+2) mod 8 = **5** | S[7] ↔ S[5] | `[2, 0, 1, 3, 7, 5, 6, 4]` |
+
+**S after KSA = `[2, 0, 1, 3, 7, 5, 6, 4]`** — a key-dependent permutation of 0–7 ✓
+
+---
+
+#### Phase 2 — Pseudo-Random Generation (PRGA)
+
+**Starting state:** `i = 0`, `j = 0`, `S = [2, 0, 1, 3, 7, 5, 6, 4]`
+
+For each output byte: `i = (i+1) mod 8`, `j = (j + S[i]) mod 8`, swap `S[i] ↔ S[j]`, output `S[(S[i]+S[j]) mod 8]`.
+
+| Step | i | j | Swap | t = (S[i]+S[j]) mod 8 | **k = S[t]** | S after swap |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| 1 | 1 | (0+**S[1]**=0) mod 8 = **0** | S[1] ↔ S[0] | (2+0) mod 8 = 2 | **S[2] = 1** | `[0, 2, 1, 3, 7, 5, 6, 4]` |
+| 2 | 2 | (0+**S[2]**=1) mod 8 = **1** | S[2] ↔ S[1] | (2+1) mod 8 = 3 | **S[3] = 3** | `[0, 1, 2, 3, 7, 5, 6, 4]` |
+
+**Keystream = `[1, 3]`**
+
+---
+
+#### Encryption
+
+$$\text{ciphertext}_i = \text{plaintext}_i \oplus k_i$$
+
+| Byte | Plaintext | Hex | Keystream | XOR | **Ciphertext** | Hex |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 1 | `H` = 72 | `0x48` | k₁ = 1 | 72 ⊕ 1 = **73** | 73 | `0x49` |
+| 2 | `i` = 105 | `0x69` | k₂ = 3 | 105 ⊕ 3 = **106** | 106 | `0x6A` |
+
+**Ciphertext = `[0x49, 0x6A]`**
+
+---
+
+#### Decryption
+
+RC4 is **its own inverse** — applying the same keystream to the ciphertext recovers the plaintext:
+
+| Byte | Ciphertext | Hex | Keystream | XOR | **Plaintext** |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 1 | 73 | `0x49` | k₁ = 1 | 73 ⊕ 1 = **72** | `H` ✓ |
+| 2 | 106 | `0x6A` | k₂ = 3 | 106 ⊕ 3 = **105** | `i` ✓ |
+
+**Recovered plaintext = `"Hi"` ✓**
+
+```{admonition} Toy vs. Real RC4
+:class: note
+This N=8 example uses **mod 8** arithmetic to keep tables human-readable. Real RC4 runs the same algorithm with **N = 256, mod 256**, performing 256 KSA rounds and generating one byte of keystream per plaintext byte. The Python implementation in §7.3 executes the full algorithm.
+```
+
+---
+
 ## 8. Trivium — An Elegant Hardware Stream Cipher
 
 **Trivium**, designed by Christophe De Cannière and Bart Preneel in 2006, is an eSTREAM Portfolio finalist. It was designed to be hardware-efficient, and its internal structure is remarkably clean compared to RC4.
@@ -780,15 +923,14 @@ Where $\lll$ is a **left rotation** (not shift). The operations are add–XOR–
 - **Fully invertible** in the proof
 
 ```{mermaid}
-flowchart TD
-    INPUT["Input: a, b, c, d<br/>(four 32-bit words)"]
-
-    R1["① a += b<br/>   d ^= a<br/>   d &lt;&lt;&lt;= 16"]
-    R2["② c += d<br/>   b ^= c<br/>   b &lt;&lt;&lt;= 12"]
-    R3["③ a += b<br/>   d ^= a<br/>   d &lt;&lt;&lt;= 8"]
-    R4["④ c += d<br/>   b ^= c<br/>   b &lt;&lt;&lt;= 7"]
-
-    OUTPUT["Output: a', b', c', d'<br/>(fully mixed)"]
+%%{init: {'themeVariables': {'fontSize': '12px', 'nodeSpacing': 30, 'rankSpacing': 30}}}%%
+flowchart LR
+    INPUT["a, b, c, d"]
+    R1["① a+=b · d^=a · d&lt;&lt;&lt;16"]
+    R2["② c+=d · b^=c · b&lt;&lt;&lt;12"]
+    R3["③ a+=b · d^=a · d&lt;&lt;&lt;8"]
+    R4["④ c+=d · b^=c · b&lt;&lt;&lt;7"]
+    OUTPUT["a', b', c', d'"]
 
     INPUT --> R1 --> R2 --> R3 --> R4 --> OUTPUT
 

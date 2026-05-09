@@ -6,7 +6,7 @@ format: jb-book
 root: intro.md
 
 parts:
-  - caption: Getting Started
+  - caption: Foundations
     numbered: false
     style: numerical
     restart_numbering: false
@@ -23,7 +23,7 @@ parts:
     - file: chapters/03_classical_ciphers.md
     - file: chapters/04_cryptanalysis_basics.md
 
-  - caption: Modern Cryptography
+  - caption: Modern Symmetric Cryptography
     numbered: false
     style: numerical
     restart_numbering: false
@@ -32,18 +32,30 @@ parts:
     - file: chapters/06_symmetric_encryption.md
     - file: chapters/07_randomness_and_stream_ciphers.md
     - file: chapters/08_block_ciphers.md
+
+  - caption: Modern Asymmetric Cryptography
+    numbered: false
+    style: numerical
+    restart_numbering: false
+    chapters:
     - file: chapters/09_public_key_cryptography.md
     - file: chapters/10_rsa.md
     - file: chapters/11_elliptic_curves.md
+    - file: chapters/14_key_exchange.md
 
-  - caption: Applications
+  - caption: Cryptographic Primitives
     numbered: false
     style: numerical
     restart_numbering: false
     chapters:
     - file: chapters/12_hash_functions.md
     - file: chapters/13_digital_signatures.md
-    - file: chapters/14_key_exchange.md
+
+  - caption: Applications
+    numbered: false
+    style: numerical
+    restart_numbering: false
+    chapters:
     - file: chapters/15_practical_applications.ipynb
 
   - caption: Reference

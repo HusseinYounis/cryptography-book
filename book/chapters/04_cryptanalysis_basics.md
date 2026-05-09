@@ -487,43 +487,9 @@ A cipher achieves perfect secrecy **if and only if**:
 Shannon's theorem proves that the **one-time pad** achieves perfect secrecy. It also proves that **no cipher can be perfectly secret with a key shorter than the message**. This is a fundamental information-theoretic lower bound — no algorithm, no matter how clever, can circumvent it.
 ```
 
-### 6.2 The One-Time Pad
-
-```{prf:definition} One-Time Pad (OTP)
-:label: def-otp
-
-For messages over $\{0,1\}^n$, the one-time pad is defined as:
-
-- $\text{Gen}$: choose $k \xleftarrow{R} \{0,1\}^n$ uniformly at random
-- $\text{Enc}_k(m) = m \oplus k$
-- $\text{Dec}_k(c) = c \oplus k$
-
-where $\oplus$ denotes bitwise XOR.
-```
-
-```{admonition} OTP Limitations
-:class: warning
-Despite achieving perfect secrecy, the one-time pad is impractical for most applications:
-
-1. **Key length equals message length** — you need as many key bits as plaintext bits
-2. **Keys must never be reused** — encrypting two messages $m_1, m_2$ with the same key $k$ leaks $m_1 \oplus m_2$ because $c_1 \oplus c_2 = m_1 \oplus m_2$
-3. **Secure key distribution** — if you have a secure channel to transmit the key, why not transmit the message directly?
-```
-
-```{prf:example} Two-Time Pad Attack
-:label: ex-two-time-pad
-
-Suppose an adversary intercepts two ciphertexts encrypted with the *same* one-time pad key $k$:
-
-$$c_1 = m_1 \oplus k, \qquad c_2 = m_2 \oplus k$$
-
-XOR-ing the two ciphertexts:
-
-$$c_1 \oplus c_2 = (m_1 \oplus k) \oplus (m_2 \oplus k) = m_1 \oplus m_2$$
-
-The attacker now has $m_1 \oplus m_2$. If she knows (or guesses) any bytes of $m_1$, she can recover corresponding bytes of $m_2$, and vice versa — key completely compromised.
-
-This exact attack was used against Soviet intelligence (VENONA project, 1940s–50s) after they reused one-time pad key pages under logistical pressure.
+```{admonition} One-Time Pad — See Chapter 7
+:class: seealso
+The One-Time Pad is the only known cipher that achieves perfect secrecy. Its construction, worked examples, requirements, and practical limitations are fully covered in **Chapter 7 (Stream Ciphers)**, where it serves as the theoretical foundation for modern stream ciphers.
 ```
 
 ::::{question} Perfect Secrecy Trade-Offs
@@ -580,94 +546,12 @@ Computational security is quantified in **bits**:
 
 ---
 
-## 8. Advanced Attack Techniques (Overview)
-
-Modern block ciphers are designed to resist the following families of attacks:
-
-### 8.1 Differential Cryptanalysis
-
-```{prf:definition} Differential Cryptanalysis
-:label: def-differential
-
-Differential cryptanalysis (Biham & Shamir, 1990) is a **chosen-plaintext** technique that analyzes how differences $\Delta x = x \oplus x'$ in the input propagate through the cipher:
-
-$$\Delta y = \text{Enc}_k(x) \oplus \text{Enc}_k(x')$$
-
-By choosing pairs $(x, x')$ with a specific $\Delta x$ and observing $\Delta y$, an attacker gathers statistical information about the last-round subkey.
+```{admonition} Advanced Attack Techniques — See Chapter 8
+:class: seealso
+Differential cryptanalysis, linear cryptanalysis, meet-in-the-middle attacks, and side-channel attacks are the primary methods used against modern block ciphers. These attacks are covered in depth in **Chapter 8 (Block Ciphers)**, where their relevance to DES and AES design decisions can be discussed in full context.
 ```
 
-```{admonition} Differential Attack on DES
-:class: note
-DES was secretly *designed* with resistance to differential cryptanalysis built into its S-boxes — IBM knew about the technique in the 1970s but it was not published until 1990. A full 16-round DES attack requires $2^{47}$ chosen plaintexts.
-```
-
-### 8.2 Linear Cryptanalysis
-
-```{prf:definition} Linear Cryptanalysis
-:label: def-linear
-
-Linear cryptanalysis (Matsui, 1993) is a **known-plaintext** technique. It finds a linear approximation:
-
-$$m_{i_1} \oplus m_{i_2} \oplus \cdots \oplus c_{j_1} \oplus c_{j_2} \oplus \cdots = k_{l_1} \oplus k_{l_2} \oplus \cdots$$
-
-that holds with probability $\frac{1}{2} + \varepsilon$ for a non-trivial bias $\varepsilon$. Collecting $O(1/\varepsilon^2)$ plaintext–ciphertext pairs yields key bits with statistical significance.
-```
-
-### 8.3 Meet-in-the-Middle Attack
-
-```{prf:definition} Meet-in-the-Middle Attack
-:label: def-mitm
-
-For a double-encryption scheme $c = E_{k_2}(E_{k_1}(m))$, an adversary with one known plaintext–ciphertext pair $(m, c)$ can:
-
-1. Compute $E_{k_1}(m)$ for **all** $2^{|k_1|}$ values of $k_1$; store in a table.
-2. Compute $D_{k_2}(c)$ for **all** $2^{|k_2|}$ values of $k_2$.
-3. Find matching middle values — this gives the key pair $(k_1, k_2)$ in $O(2^{|k_1|} + 2^{|k_2|})$ time (not $O(2^{|k_1|+|k_2|})$).
-
-Double-DES has an effective security of only 57 bits (barely better than single DES), not 112 bits.
-```
-
-### 8.4 Side-Channel Attacks
-
-```{prf:definition} Side-Channel Attack
-:label: def-side-channel
-
-A side-channel attack exploits **physical information** leaked during computation rather than mathematical weaknesses in the cipher:
-
-- **Timing attacks** — execution time varies with key bits (Kocher, 1996)
-- **Power analysis (SPA/DPA)** — power consumption curves reveal key-dependent operations
-- **Electromagnetic (EM) attacks** — EM radiation from hardware leaks internal state
-- **Cache-timing attacks** — memory access patterns on shared hardware reveal secrets
-```
-
-```{admonition} Practical Relevance
-:class: warning
-Side-channel attacks are among the most practical threats to real implementations. Correct mathematical design is necessary but not sufficient — implementations must also be **constant-time** (no branching or memory access patterns that depend on secret data).
-```
-
-::::{question} Attack Classification
-:type: multiple-choice
-:variant: multiple-select
-:showanswer:
-
-Which of the following are examples of side-channel attacks? (Select all that apply.)
----
-[x] Measuring the time taken by an RSA decryption operation to infer key bits
-> Correct! This is a classic timing attack (Kocher 1996), exploiting the key-dependent execution path in square-and-multiply exponentiation.
-[ ] Factoring the RSA modulus $n$ using the Number Field Sieve
-> This is a mathematical attack on the underlying hard problem, not a side channel.
-[x] Analysing power consumption spikes in a smartcard during AES encryption
-> Correct! This is a Differential Power Analysis (DPA) attack — a classic side-channel technique.
-[x] Exploiting cache timing to recover AES key bytes on a shared server
-> Correct! Cache-timing attacks (e.g., Flush+Reload) are a side-channel attack exploiting shared hardware state.
-[ ] Using differential cryptanalysis with $2^{47}$ chosen plaintexts on DES
-> Differential cryptanalysis is a mathematical, chosen-plaintext attack — not a side-channel attack.
----
-::::
-
----
-
-## 9. Summary
+## 8. Summary
 
 | Concept | Definition | Key Takeaway |
 |:---|:---|:---|

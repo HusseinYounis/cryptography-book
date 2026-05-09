@@ -631,29 +631,10 @@ Ciphertext alphabet: QWERTYUIOPASDFGHJKLZXCVBNM
 - **Vulnerability:** Frequency analysis
 - **Attack method:** Statistical analysis of letter frequencies
 
-## 2. Frequency Analysis
-
-Frequency analysis exploits the fact that in any language, certain letters and combinations occur more frequently than others.
-
-### English Letter Frequencies
-
-Most common letters in English (approximate):
-1. E (12.7%)
-2. T (9.1%)
-3. A (8.2%)
-4. O (7.5%)
-5. I (7.0%)
-
-```{tip}
-Common words like "THE", "AND", "OF" can help identify patterns in ciphertext.
+```{admonition} Frequency Analysis
+:class: note
+Frequency analysis exploits the fact that in any language, certain letters appear more often than others (e.g., E ≈ 12.7%, T ≈ 9.1% in English). An attacker counts letter frequencies in the ciphertext and matches them to known language statistics to recover the substitution mapping. A full treatment is in **Chapter 4**.
 ```
-
-**Attack Strategy:**
-1. Count frequency of each letter in ciphertext
-2. Compare with known language statistics
-3. Make educated guesses for high-frequency letters
-4. Look for common patterns (double letters, common words)
-5. Iteratively refine the mapping
 
 ## 3. Polyalphabetic Ciphers
 

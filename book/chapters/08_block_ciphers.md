@@ -13,9 +13,13 @@ kernelspec:
 
 ## Introduction
 
-A block cipher is a **keyed permutation** on fixed-size data blocks. Applied with the right mode of operation, it becomes the most versatile building block in symmetric cryptography — used for file encryption, authenticated encryption, MAC construction, and even hash functions.
+A block cipher is a **keyed permutation** on fixed-size blocks of data. For one secret key, it maps each plaintext block to exactly one ciphertext block, and decryption applies the inverse mapping to recover the original block.
 
-This chapter covers the two major structural designs (Feistel networks and Substitution-Permutation Networks), the most important historical and modern ciphers (DES, 3DES, AES), and the modes of operation that let them encrypt data of arbitrary length securely.
+Block ciphers are not usually used alone. A real message is longer than one block, and a secure system must also hide repeated patterns, handle nonces or IVs correctly, and usually authenticate the ciphertext. For that reason, this chapter studies block ciphers in three layers:
+
+1. The design ideas that make a block cipher look random.
+2. Two major block-cipher structures: Feistel networks and substitution-permutation networks.
+3. Modes of operation, which turn a one-block primitive into secure encryption for real messages.
 
 ::::{grid} 1 2 2 3
 :gutter: 3
@@ -37,11 +41,12 @@ ECB, CBC, CTR, GCM — how to encrypt more than one block safely.
 ```{admonition} Learning Objectives
 :class: tip
 By the end of this chapter you will be able to:
+- Define a block cipher as a keyed permutation and explain why block size matters
 - Explain Shannon's confusion and diffusion principles
-- Describe the Feistel network and prove that encryption and decryption share the same structure
+- Describe Feistel and SPN cipher structures and compare their invertibility requirements
 - State the key parameters of DES and explain why it is insecure
 - Describe the four AES round operations and their roles
-- Distinguish the standard block cipher modes and know which mode is secure and authenticated
+- Distinguish ECB, CBC, CTR, and GCM, and explain why authenticated encryption is preferred
 ```
 
 ---
@@ -59,9 +64,47 @@ The fix is to use a **mode of operation** (CBC, CTR, GCM) that ensures identical
 
 ---
 
-## 1. Design Principles: Confusion and Diffusion
+```{admonition} How to Study This Chapter
+:class: note
+Read Sections 1-3 for the core ideas: block size, confusion, diffusion, Feistel networks, and SPNs. Section 4 is a detailed DES case study; use the S-DES examples to learn the mechanics, then treat the long DES tables as reference material. Section 5 explains AES as the modern standard, and Section 6 is the practical security layer: the mode of operation often determines whether an implementation is safe.
+```
 
-Shannon's two principles from 1949 underpin every modern block cipher design.
+---
+
+## 1. What a Block Cipher Must Achieve
+
+At a high level, a block cipher should behave like a randomly chosen permutation that only the key holder can evaluate and invert. This gives us three immediate design requirements.
+
+```{prf:definition} Block Cipher
+:label: def-block-cipher
+
+A **block cipher** is a pair of efficient algorithms $(E, D)$ parameterised by a secret key $K$:
+
+$$E_K : \{0,1\}^n \to \{0,1\}^n$$
+
+$$D_K : \{0,1\}^n \to \{0,1\}^n$$
+
+such that for every $n$-bit block $P$:
+
+$$D_K(E_K(P)) = P$$
+
+For each fixed key $K$, $E_K$ must be a **permutation**: no two plaintext blocks may encrypt to the same ciphertext block.
+```
+
+| Requirement | Meaning | Why students should care |
+|:---|:---|:---|
+| **Fixed block size** | AES always encrypts 128-bit blocks; DES encrypts 64-bit blocks | Long messages need a mode of operation |
+| **Large key space** | Brute force should require about $2^k$ trials | DES failed mainly because $k=56$ was too small |
+| **Random-looking output** | Small input/key changes should affect about half the output bits | Prevents statistical and algebraic shortcuts |
+
+```{admonition} Deterministic Primitive, Randomised Encryption
+:class: important
+A block cipher itself is deterministic: same key and same block always give the same ciphertext block. Secure encryption of real messages therefore requires a mode of operation that adds an IV, nonce, counter, or authentication tag. This is exactly why AES can be secure while AES-ECB is not.
+```
+
+### 1.1 Confusion and Diffusion
+
+Shannon's two principles from 1949 underpin modern block cipher design.
 
 ```{prf:criterion} Confusion and Diffusion
 :label: crit-confusion-diffusion
@@ -82,9 +125,75 @@ A cipher must have **both** properties to resist statistical attacks:
 
 ---
 
-### 1.1 P-boxes (Permutation Boxes)
+### 1.2 S-boxes: Confusion by Substitution
 
-A **P-box** (also called a *D-box* or *diffusion box*) is a hardware/software component that rearranges — **permutes** — the bit positions of its input block. P-boxes are the primary mechanism for achieving **diffusion** in block ciphers.
+An **S-box** (substitution box) is the main source of non-linearity in many block ciphers. It replaces a small input word with a different output word according to a fixed lookup table.
+
+The table is public. The secrecy of the cipher does **not** come from hiding the S-box; it comes from mixing secret round keys with the state before and between substitution layers.
+
+```{prf:definition} S-box
+:label: def-sbox
+
+An **S-box** is a fixed lookup table that maps an $n$-bit input to an $m$-bit output, usually in a deliberately non-linear way:
+
+$$S : \{0,1\}^n \to \{0,1\}^m$$
+
+Good S-boxes are designed so that there is no useful linear equation relating input bits to output bits. This makes linear and differential cryptanalysis much harder.
+```
+
+| S-box width | Used in | Note |
+|:---:|:---:|:---|
+| 4-bit in, 4-bit out | PRESENT, lightweight ciphers | Compact, suited for hardware |
+| 6-bit in, 4-bit out | DES S1-S8 | Non-square mapping; not individually invertible |
+| 8-bit in, 8-bit out | AES SubBytes | Bijective; required for AES decryption |
+
+````{prf:example} A Correct 4-bit S-box Lookup
+:label: ex-sbox-lookup
+
+Consider the following toy S-box. The input is a 4-bit value, interpreted as a hexadecimal digit; the output is another 4-bit value.
+
+| Input $x$ | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | A | B | C | D | E | F |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| $S(x)$ | E | 4 | D | 1 | 2 | F | B | 8 | 3 | A | 6 | C | 5 | 9 | 0 | 7 |
+
+If the input nibble is $x=\mathtt{1010}_2=\mathtt{A}_{16}$, then the table gives:
+
+$$S(\mathtt{A}) = \mathtt{6} = \mathtt{0110}_2$$
+
+This is a substitution of the **input value** by a fixed table entry. The S-box does not select bits from the key. In a real round, the key first changes the state through XOR or another key-mixing operation, and then the S-box substitutes the resulting state bits.
+````
+
+```{admonition} S-boxes in AES
+:class: note
+AES uses one public 8-bit S-box in the **SubBytes** operation. Every byte of the 16-byte AES state is independently replaced by its S-box value. The AES S-box is constructed from multiplicative inversion in $GF(2^8)$ followed by an affine transformation. This gives strong non-linearity while still being invertible.
+```
+
+#### Linearity vs Non-Linearity in S-Boxes
+
+One of the most important properties of a good S-box is **non-linearity**. A function $f$ is linear over XOR if:
+
+$$f(a \oplus b) = f(a) \oplus f(b)$$
+
+for all inputs $a$ and $b$. If a cipher used only linear operations, an attacker could describe encryption as a system of linear equations and solve for key information from enough plaintext-ciphertext pairs.
+
+```{admonition} Key Intuition
+:class: tip
+Linear layers are useful for spreading bits, but a cipher also needs non-linear substitution. Without S-box non-linearity, repeated rounds usually produce a larger linear transformation, not real cryptographic confusion.
+```
+
+```{figure} ../figures/ch08/sbox_linear_vs_nonlinear.png
+:align: center
+:width: 90%
+:alt: Linear vs Non-Linear S-box substitution plots
+
+Linear and non-linear substitution compared. A good S-box avoids visible input-output structure and makes bit differences propagate unpredictably.
+```
+
+---
+
+### 1.3 P-boxes: Diffusion by Rearrangement
+
+A **P-box** (permutation box, sometimes called a diffusion box) rearranges bit positions. By itself, a P-box is linear; its purpose is to spread the output bits of one substitution layer into many positions before the next substitution layer.
 
 ```{prf:definition} P-box
 :label: def-pbox
@@ -92,9 +201,13 @@ A **P-box** (also called a *D-box* or *diffusion box*) is a hardware/software co
 A **P-box** takes an $n$-bit input and produces an $m$-bit output by rearranging (and optionally duplicating or dropping) bits according to a fixed table. The table entry at position $j$ specifies which input bit position maps to output position $j$.
 ```
 
-**Example:** For input positions $(1, 2, 3, 4, 5)$, one possible P-box output ordering is $(3, 4, 2, 1, 5)$ — input bit 3 moves to output position 1, input bit 4 to position 2, and so on.
+There are three useful cases.
 
-There are three types of P-boxes, classified by the relationship between input count $n$ and output count $m$:
+| P-box type | Relation | Invertible? | DES/AES example |
+|:---:|:---:|:---:|:---|
+| **Straight** | $n=m$ | Yes, if every input appears exactly once | AES ShiftRows; DES final P-box |
+| **Expansion** | $m>n$ | No; some bits are duplicated | DES E-box, 32 bits to 48 bits |
+| **Compression** | $m<n$ | No; some bits are dropped | DES PC-1 and PC-2 key selections |
 
 ```{figure} ../figures/ch08/pbox_types_overview.png
 :name: fig-pbox-types
@@ -106,7 +219,7 @@ There are three types of P-boxes, classified by the relationship between input c
 
 ---
 
-#### 1.1.1 Straight P-box ($n = m$)
+#### 1.3.1 Straight P-box ($n = m$)
 
 A **straight P-box** has the same number of inputs and outputs. Every input bit appears in the output exactly once, just at a different position.
 
@@ -161,7 +274,7 @@ Every bit moved to a new position; **no bit was lost or duplicated**.
 
 ---
 
-#### 1.1.2 Expansion P-box ($m > n$)
+#### 1.3.2 Expansion P-box ($m > n$)
 
 An **expansion P-box** has more outputs than inputs. Some input bits are **duplicated** to fill the extra output positions.
 
@@ -212,7 +325,7 @@ Input bits **1** and **4** each appear **twice** in the output — that is what 
 
 ---
 
-#### 1.1.3 Compression P-box ($m < n$)
+#### 1.3.3 Compression P-box ($m < n$)
 
 A **compression P-box** has fewer outputs than inputs. Some input bits are **dropped** entirely.
 
@@ -263,7 +376,7 @@ Bits at positions **3, 6, 8** are discarded — the original 8-bit input **canno
 
 ---
 
-#### 1.1.4 Invertibility Summary
+#### 1.3.4 Invertibility Summary
 
 ```{admonition} Which P-boxes are invertible?
 :class: important
@@ -279,180 +392,7 @@ This is why **Feistel networks** (DES) use non-invertible components freely — 
 
 ---
 
-### 1.2 S-boxes (Substitution Boxes)
-
-An **S-box** (substitution box), also known as a **swap box**, is the primary tool for **confusion**. Unlike P-boxes, which rearrange bits, S-boxes **replace** a group of bits with a completely different group in a non-linear way.
-
-```{prf:definition} S-box
-:label: def-sbox
-
-An **S-box** is a fixed lookup table that maps an $n$-bit input to an $m$-bit output non-linearly. The mapping is designed so that:
-- A single input bit change causes multiple, unpredictable output bit changes (**non-linearity**)
-- There is no simple algebraic relationship between input and output (resists linear cryptanalysis)
-
-Most block ciphers use $6 \to 4$ bit S-boxes (DES) or $8 \to 8$ bit S-boxes (AES).
-```
-
-**Function:** Each group of input bits is substituted with a different group of bits according to a predetermined replacement table. This substitution is the core mechanism by which S-boxes introduce complexity into the cipher.
-
-**Purpose:** The primary goal of S-boxes is to introduce **non-linearity** into the cryptographic algorithm, making it resistant to statistical attacks — especially **linear cryptanalysis** and **differential cryptanalysis**. Without non-linearity, an attacker could model the cipher as a system of linear equations and solve for the key efficiently.
-
-**Construction:** S-boxes are typically constructed using mathematical procedures such as **modular arithmetic** or **polynomial transformations over finite fields** (e.g., multiplicative inversion in $GF(2^8)$ for AES). The construction is a critical design decision — a poorly built S-box can undermine the entire cipher's security.
-
-```{admonition} S-boxes in AES (SubBytes)
-:class: note
-In the **Advanced Encryption Standard (AES)**, a single 8-bit S-box is used in the **SubBytes** step of each round. Every byte of the 16-byte state is independently replaced with the corresponding byte from the S-box table. The AES S-box is constructed by:
-1. Computing the **multiplicative inverse** of each byte value in $GF(2^8)$ (with $0 \mapsto 0$)
-2. Applying an **affine transformation** over $GF(2)$ to remove simple algebraic structure
-
-This two-step construction ensures both non-linearity and resistance to algebraic attacks.
-```
-
-**Block-size flexibility:** The size of an S-box depends on the block size of the cipher. Common configurations are:
-
-| S-box width | Used in | Note |
-|:---:|:---:|:---|
-| 4-bit in, 4-bit out | PRESENT, lightweight ciphers | Compact, suited for hardware |
-| 6-bit in, 4-bit out | DES (S1–S8) | Non-square mapping |
-| 8-bit in, 8-bit out | AES, Blowfish | Most common in modern ciphers |
-| 32-bit in, 32-bit out | Some 64/128-bit block ciphers | Larger tables, stronger confusion |
-
-| | S-box | P-box |
-|:---:|:---:|:---:|
-| **Shannon property** | Confusion | Diffusion |
-| **Operation** | Non-linear substitution | Bit rearrangement (linear) |
-| **DES example** | S1–S8: $6 \to 4$ bits each | E-box (expansion), P-box (straight), PC-1/PC-2 (compression) |
-| **AES example** | SubBytes: $8 \to 8$ bits | ShiftRows, MixColumns |
-
----
-
-### 1.2.1 Simple S-Box Example (16-bit)
-
-The following example illustrates a **16-bit S-box**: the plaintext block has 16 bit positions (indices 0–15), and each position is remapped to a different position defined by the substitution key phrase. For instance, bit 0 of the plaintext is replaced by bit 10 of the key phrase.
-
-```{admonition} Important Note on Block Size Compatibility
-:class: warning
-This is a **16-bit S-box illustration only**. In practice, the S-box size must match the block size of your cipher — 16-bit, 32-bit, 64-bit, or larger. The plaintext block size and the key phrase must be **compatible in size** with the requirements of the cryptographic algorithm being used.
-```
-
-````{admonition} Solved Example — 16-bit S-Box
-:class: tip
-
-**Given:**
-
-| | Value (binary) | Hex |
-|:---|:---:|:---:|
-| **Plaintext block** | `1010 1100 0011 1110` | `0xAC3E` |
-| **Key phrase** | `0110 1001 1101 0101` | `0x69D5` |
-
-**S-box lookup table** — `sbox[output position] = key phrase bit to take`:
-
-| Output bit | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Takes key bit | 10 | 5 | 14 | 3 | 7 | 0 | 11 | 13 | 2 | 8 | 1 | 6 | 15 | 9 | 4 | 12 |
-
-**Step-by-step substitution:**
-
-```
-Key phrase bits (indexed 0–15):
-  pos:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-  bit:  0  1  1  0  1  0  0  1  1  1  0  1  0  1  0  1
-
-Output bit 0  ← key bit 10 = 0
-Output bit 1  ← key bit  5 = 0
-Output bit 2  ← key bit 14 = 0
-Output bit 3  ← key bit  3 = 0
-Output bit 4  ← key bit  7 = 1
-Output bit 5  ← key bit  0 = 0
-Output bit 6  ← key bit 11 = 1
-Output bit 7  ← key bit 13 = 1
-Output bit 8  ← key bit  2 = 1
-Output bit 9  ← key bit  8 = 1
-Output bit 10 ← key bit  1 = 1
-Output bit 11 ← key bit  6 = 0
-Output bit 12 ← key bit 15 = 1
-Output bit 13 ← key bit  9 = 1
-Output bit 14 ← key bit  4 = 1
-Output bit 15 ← key bit 12 = 0
-
-Ciphertext:  0 0 0 0 1 0 1 1  1 1 1 0 1 1 1 0
-           = 0000 1011 1110 1110  =  0x0BEE
-```
-
-**Result:** `0xAC3E` → `0x0BEE`
-
-Note that the **plaintext value itself is not used** — only its structure determines which key bits to select. The output depends entirely on the key phrase and the S-box table, which is the source of confusion.
-````
-
-**What the example shows:**
-- The S-box table defines 16 substitution rules — one per output bit position.
-- Each output bit is taken from a specific key phrase bit, not the plaintext bit at that position.
-- Changing a single bit in the key phrase can alter multiple output bits at once — demonstrating the **non-linearity** S-boxes are designed to provide.
-- A real cipher applies this operation over bytes (not individual bits) and repeats it across many rounds.
-
-```{admonition} S-Box Uses the Key — Not the Plaintext
-:class: tip
-
-The S-box relies on the **secret key** as the source that drives bit transformation — not the plaintext. This means that even if an attacker knows the plaintext, they still cannot reproduce or predict the output without knowing the key.
-
-The key is what makes each substitution step unique and secret. Without it, no one can reverse or replicate the transformation — which is exactly what keeps the encryption secure.
-```
-
----
-
-### 1.2.2 Linearity vs Non-Linearity in S-Boxes
-
-One of the most important properties of a good S-box is **non-linearity**. To understand why, we first need to understand what linearity means — and why it is dangerous in a cipher.
-
-#### What is a Linear Function?
-
-A function $f$ is **linear** if it satisfies:
-
-$$f(a \oplus b) = f(a) \oplus f(b)$$
-
-for all inputs $a$ and $b$ (where $\oplus$ is XOR). In plain terms: the output of $f$ on a combination of inputs can be predicted from the outputs on individual inputs.
-
-**Example of a linear substitution:** shift each input byte by a fixed amount.
-
-$$f(x) = x \oplus k$$
-
-If an attacker knows a few plaintext–ciphertext pairs, they can write linear equations and **solve for the key directly** — this is the core idea behind **linear cryptanalysis**.
-
-#### Why Non-Linearity Matters
-
-A **non-linear** S-box breaks this predictability. No simple equation $\sum a_i \cdot x_i = b$ (mod 2) holds for all input–output pairs. This forces an attacker to test exponentially more combinations — making cryptanalysis infeasible.
-
-```{admonition} Key Intuition
-:class: tip
-**Linear function** → attacker can set up equations and solve for the key with very few known plaintexts.
-
-**Non-linear S-box** → no such equations exist; the attacker gains almost no information from known pairs.
-```
-
-#### Interactive Plot: Linear vs Non-Linear Substitution
-
-The plots below compare a **linear** substitution (XOR with a constant) against a **non-linear** S-box side by side, and show how many output bits change when a single input bit is flipped — the basis of differential cryptanalysis resistance.
-
-```{figure} ../figures/ch08/sbox_linear_vs_nonlinear.png
-:align: center
-:width: 90%
-:alt: Linear vs Non-Linear S-box substitution plots
-```
-
-**Reading the plots:**
-
-| Plot | What it shows |
-|:---|:---|
-| **Top-left** (linear) | A perfectly straight diagonal line — output is a simple, predictable shift of input |
-| **Top-right** (AES S-box) | A scrambled, irregular scatter — no visible pattern between input and output |
-| **Bottom-left** (linear bit-flip) | Flipping 1 input bit **always** flips exactly 1 output bit — trivially exploitable |
-| **Bottom-right** (AES bit-flip) | Flipping 1 input bit changes **1 to 8** output bits unpredictably — strong non-linearity |
-
-The bottom histograms are the core of **linear cryptanalysis resistance**: if an attacker can find a pattern like "bit $i$ of the output always follows bit $j$ of the input", they can build linear approximations and recover the key. A good S-box makes every such approximation have close to a 50% error rate — effectively useless.
-
----
-
-### 1.3 How Confusion and Diffusion Work Together
+### 1.4 How Confusion and Diffusion Work Together
 
 A single round of S-box followed by P-box achieves local confusion and diffusion. After just **two rounds**, changes propagate through the full block — the **avalanche effect**:
 
@@ -577,6 +517,20 @@ The round function $F$ is **never inverted** — the XOR structure of the networ
 ```{admonition} Why Feistel Networks Are Elegant
 :class: important
 The round function $F$ does **not** need to be invertible. Inversion is achieved by the XOR structure of the network itself. This means the same hardware/software circuit encrypts and decrypts — only the key schedule is reversed. DES's entire 16-round structure is symmetric; the chip from 1977 decrypts by reversing the key order.
+```
+
+```{prf:remark} Why the Previous Round Can Be Recovered
+:label: rem-feistel-inversion
+
+Suppose one encryption round produced:
+
+$$L_i = R_{i-1}, \qquad R_i = L_{i-1} \oplus F(R_{i-1}, K_i)$$
+
+From $(L_i, R_i)$, the previous right half is already known because $R_{i-1}=L_i$. Then the previous left half is recovered by XORing the same round-function value again:
+
+$$L_{i-1} = R_i \oplus F(L_i, K_i)$$
+
+The important point is that decryption recomputes $F(L_i,K_i)$; it never needs to invert $F$.
 ```
 
 ### 2.4 Subkey Generation (Key Schedule)
@@ -707,17 +661,17 @@ Both SubBytes and the P-layer must be **invertible** (unlike in Feistel networks
 
 ## 4. Data Encryption Standard (DES)
 
-DES was the US federal standard from 1977 to 2001. It was the first publicly specified cipher and drove an entire generation of cryptographic research.
+DES was the main US federal block-cipher standard from 1977 until AES replaced it in 2001. It is no longer secure for new systems, but it remains one of the best teaching examples for understanding Feistel networks, key schedules, S-boxes, and diffusion.
 
 ```{prf:definition} DES
 :label: def-des
 
-**Data Encryption Standard (DES)** is a Feistel-network block cipher with:
+**Data Encryption Standard (DES)** is a 64-bit Feistel-network block cipher with:
 
 | Parameter | Value |
 |:---:|:---:|
 | Block size | 64 bits |
-| Key size | 56 bits (64 bits including 8 parity bits) |
+| Key size | 56 effective key bits (encoded as 64 bits with 8 parity bits) |
 | Rounds | 16 |
 | Round function | Expansion + S-box substitution + permutation |
 | Key schedule | Generates 16 subkeys of 48 bits each |
@@ -734,7 +688,7 @@ The algorithm's **structure** is still considered sound — it was the small key
 
 ### 4.1 DES Full Architecture
 
-DES processes a 64-bit plaintext block through four sequential phases. The **data path** and **key path** run in parallel:
+Standard DES always processes a **64-bit plaintext block** using a **64-bit encoded key**. Only 56 key bits are cryptographic key material; the remaining 8 bits are parity bits. The **data path** and **key path** run in parallel:
 
 ```{figure} ../figures/ch08/des_full_architecture.webp
 :name: fig-des-architecture
@@ -752,11 +706,11 @@ DES processes a 64-bit plaintext block through four sequential phases. The **dat
 
 ---
 
-### 4.1.1 Road Map — Five Steps, Two Scales
+### 4.1.1 Road Map — Standard DES and Teaching Examples
 
-Every operation in DES has a smaller twin in **S-DES** (Simplified DES, 8-bit blocks, 10-bit key). The table below maps them side by side. For each step (§4.2–4.5) you will see a blue **S-DES Analogy** box first, then the full DES version — same logic, bigger tables.
+The standard algorithm is the **Standard DES** column: 64-bit blocks, 56 effective key bits, and 16 Feistel rounds. The **S-DES** column is not part of the DES standard; it is a small teaching model that uses the same kind of operations on 8-bit blocks so students can compute the steps by hand.
 
-| Step | What happens | S-DES (8-bit / 10-bit key) | Full DES (64-bit / 56-bit key) |
+| Step | What happens | Teaching example: S-DES | Standard DES |
 |:---:|:---|:---|:---|
 | **Key pre-processing** | Remove parity, permute key bits | No parity bits — all 10 key bits used; apply **P10** | 8 parity bits dropped; 56 bits permuted by **PC-1** |
 | **Step 1: IP** | Scramble plaintext bits | **IP** permutes 8 bits with $[2,6,3,1,4,8,5,7]$; split → $L_0$ (4 bits) + $R_0$ (4 bits) | **IP** permutes 64 bits with 8×8 table; split → $L_0$ (32 bits) + $R_0$ (32 bits) |
@@ -765,9 +719,9 @@ Every operation in DES has a smaller twin in **S-DES** (Simplified DES, 8-bit bl
 | **Swap** | Re-order halves | Swap $L_2 \leftrightarrow R_2$ after round 2 | Swap $L_{16} \leftrightarrow R_{16}$ after round 16 |
 | **Step 4: IP⁻¹** | Undo IP scrambling | **IP⁻¹** with $[4,1,3,5,7,2,8,6]$ → 8-bit ciphertext | **IP⁻¹** with 8×8 table → 64-bit ciphertext |
 
-```{admonition} How to read §4.2–4.5
+```{admonition} How to read §4.2-§4.6
 :class: tip
-Each step section explains the **full DES operation first** (64-bit block / 56-bit key). A **blue S-DES Analogy box** then illustrates the same idea on a toy scale (8-bit block / 10-bit key) so you can verify it by hand. The complete end-to-end S-DES encryption example in **§4.6.1** chains all steps together.
+Study the **standard DES** description first: this is the real 64-bit algorithm. Use the S-DES boxes only as hand-computable examples that illustrate the same kind of permutation, rotation, expansion, substitution, and Feistel update.
 ```
 
 ---
@@ -776,9 +730,7 @@ Each step section explains the **full DES operation first** (64-bit block / 56-b
 
 Before the first Feistel round, DES applies a fixed, publicly known **Initial Permutation (IP)** to the 64-bit plaintext block. IP simply reorders the bits — no XOR, no key material, no S-box. The permuted block is then split into two 32-bit halves, $L_0$ and $R_0$, which feed into the 16 rounds.
 
-The permutation is defined by an 8×8 lookup table. Each cell holds **the input bit number** that is routed to that output position (output bits are numbered 1–64, read left-to-right, top-to-bottom):
-
-Each cell is the **input** bit number whose value is placed at that output position. Read the table left-to-right, top-to-bottom for output bits 1 → 64.
+The permutation is defined by an 8×8 lookup table. Each cell is the **input bit number** whose value is placed at that output position. Read the table left-to-right, top-to-bottom for output bits 1 → 64.
 
 | Output bits | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
 |:-----------:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -869,10 +821,10 @@ The permuted 64-bit block is split into:
 - $L_0$ = bits 1–32 of the permuted block
 - $R_0$ = bits 33–64 of the permuted block
 
-```{admonition} S-DES Analogy — IP on 8 bits
+```{admonition} Teaching Analogy — IP on 8 Bits
 :class: seealso
 
-S-DES applies the **same idea** at toy scale: a fixed 8-bit permutation before the first round.
+The teaching example applies the same type of operation at a smaller scale: a fixed 8-bit permutation before the first round.
 
 $$\text{IP} = [2,\ 6,\ 3,\ 1,\ 4,\ 8,\ 5,\ 7]$$
 
@@ -889,7 +841,7 @@ IP picks positions $[2,6,3,1,4,8,5,7]$: bits $1,1,0,1,1,1,0,1$ → $\mathtt{1101
 
 $$L_0 = \mathtt{1101} \qquad R_0 = \mathtt{1101}$$
 
-Same logic as DES — just 8 wires instead of 64.
+Same type of wiring as DES — just 8 positions instead of 64.
 ```
 
 ---
@@ -1036,26 +988,26 @@ $$\boxed{K_1 = \mathtt{194C D072 DE8C}}$$
 After round 16, both halves have rotated a full 28 positions → $C_{16} = C_0$, $D_{16} = D_0$. Decryption applies the same schedule but uses $K_{16}, K_{15}, \ldots, K_1$ in reverse order.
 ```
 
-```{admonition} S-DES Analogy — Key Schedule on 10 bits
+```{admonition} Teaching Analogy — Key Schedule on 10 Bits
 :class: seealso
 
-S-DES applies the **same three-stage structure** at toy scale:
+The teaching key schedule uses the same kind of three-stage structure at a smaller scale:
 
-| Stage | S-DES | Full DES |
+| Stage | Teaching example | Standard DES |
 |:---:|:---|:---|
 | **Initial permutation** | **P10** permutes all 10 key bits | **PC-1** permutes 64 bits, drops 8 parity bits, keeps 56 |
 | **Split** | $C_0$ = left 5 bits, $D_0$ = right 5 bits | $C_0$ = left 28 bits, $D_0$ = right 28 bits |
-| **Per-round shift** | Round 1 → LS-1; Rounds 2–3 → LS-2 | Rounds 1,2,9,16 → LS-1; others → LS-2 |
+| **Per-round shift** | Round 1 → LS-1; later practice rotations → LS-2 | Rounds 1,2,9,16 → LS-1; others → LS-2 |
 | **Extract subkey** | **P8** selects 8 of 10 bits from $C_i\|D_i$ | **PC-2** selects 48 of 56 bits from $C_i\|D_i$ |
 | **Subkey size** | 8 bits | 48 bits |
 | **Number of subkeys** | 2 ($K_1$, $K_2$) | 16 ($K_1 \ldots K_{16}$) |
 
-The complete S-DES key schedule worked example is in **§4.3.2**.
+The complete teaching key schedule worked example is in **§4.3.2**.
 ```
 
-#### 4.3.1 Binary Key Schedule — Three Standalone Examples
+#### 4.3.1 DES Key Schedule — Standalone Examples
 
-Each example below is **self-contained**: it starts from the master key, applies PC-1 to get $C_0$ and $D_0$, shifts the halves, then applies PC-2 to produce the subkey. Work through them step by step with a pencil.
+Each example below is **self-contained**: it starts from a 64-bit DES key value, applies PC-1 to get $C_0$ and $D_0$, shifts the halves, then applies PC-2 to produce a round subkey. The examples are written in bit strings because DES tables operate on bit positions, not because binary notation is a separate algorithm.
 
 **What you need to solve each example:**
 
@@ -1068,7 +1020,7 @@ Each example below is **self-contained**: it starts from the master key, applies
 
 ---
 
-`````{admonition} Example 1 — Master key 0000000100100011 0100010101100111 1000100110101011 1100110111101111
+`````{admonition} Example 1 — Round-1 subkey for DES key 0123456789ABCDEF
 :class: tip
 
 **Given master key (64 bits, written in binary, bits 1–64 left to right):**
@@ -1149,10 +1101,10 @@ $$\boxed{K_1 = \mathtt{0001\,1011\,0000\,0010\,0110\,0111\,1001\,1011\,0100\,100
 
 ---
 
-`````{admonition} Example 2 — Master key 1111111111111111 1111111111111111 1111111111111111 1111111111111111
+`````{admonition} Example 2 — Pattern key with all selected bits equal to 1
 :class: tip
 
-**Given master key:** All 64 bits = `1` (hex `FFFFFFFFFFFFFFFF`).
+**Given teaching key pattern:** all 64 displayed bits are `1` (hex `FFFFFFFFFFFFFFFF`). This is used only to show how PC-1, rotation, and PC-2 behave when every selected bit is the same.
 
 
 
@@ -1184,15 +1136,15 @@ $$\boxed{K_1 = \mathtt{1111\,1111\,1111\,1111\,1111\,1111\,1111\,1111\,1111\,111
 
 **Round 3 — Shift by 2:** still all 1s → $K_3 = \mathtt{FFFFFFFFFFFF}$
 
-> **Insight:** An all-ones key produces identical subkeys for every round — demonstrating why key diversity matters. In practice DES avoids "weak keys" like this.
+> **Insight:** If the selected key bits are all identical, every subkey is identical. Real DES has known weak-key classes, and secure systems avoid DES entirely rather than trying to manage those edge cases.
 `````
 
 ---
 
-`````{admonition} Example 3 — Master key 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+`````{admonition} Example 3 — Pattern key with all selected bits equal to 0
 :class: tip
 
-**Given master key:** All 64 bits = `0` (hex `0000000000000000`).
+**Given teaching key pattern:** all 64 displayed bits are `0` (hex `0000000000000000`). This is a simple pattern example; in formal DES key encodings, parity bits are normally set to odd parity.
 
 
 
@@ -1222,26 +1174,26 @@ $$\boxed{K_1 = \mathtt{0000\,0000\,0000\,0000\,0000\,0000\,0000\,0000\,0000\,000
 
 **Round 2 and Round 3:** identical — all-zero subkeys for every round.
 
-> **Insight:** An all-zeros key is equally dangerous — it is another DES **weak key**. All 16 subkeys are identical. DES has exactly 4 weak keys; cryptographic libraries reject them automatically.
+> **Insight:** If the selected key bits are all zero, all round subkeys are zero. This illustrates why repeated or low-diversity subkeys are undesirable. Modern practice is to use AES, not DES.
 `````
 
 ---
 
-#### 4.3.2 Simplified DES (S-DES) Key Schedule — 10-Bit Master Key
+#### 4.3.2 Teaching Example: Simplified DES Key Schedule
 
-**Simplified DES** is a teaching cipher that mirrors the full DES key schedule but operates on a **10-bit master key** and produces **8-bit subkeys**. Understanding S-DES first makes the full 64-bit DES key schedule much easier to follow.
+**Simplified DES (S-DES)** is a teaching cipher, not the DES standard. It mirrors the *shape* of the DES key schedule but operates on a **10-bit master key** and produces **8-bit subkeys**. Use it to learn the steps by hand, then map the same ideas back to standard DES: PC-1, split, rotate, PC-2.
 
-**S-DES key schedule parameters:**
+**Teaching key schedule parameters:**
 
 | Item | Value |
 |:---|:---|
 | Master key | 10 bits, labelled $k_1 k_2 \ldots k_{10}$ (left = most significant) |
 | **P10** | Initial permutation of all 10 key bits |
 | **Split** | Left half $C_0$ = bits 1–5; Right half $D_0$ = bits 6–10 |
-| **Shift schedule** | Round 1 → LS-1 (rotate left by **1**); Rounds 2, 3 → LS-2 (rotate left by **2**) |
+| **Shift schedule used here** | Round 1 → LS-1 (rotate left by **1**); later practice rotations → LS-2 (rotate left by **2**) |
 | **P8** | Selects 8 of the 10 bits from $C_i \| D_i$ to form each 8-bit subkey |
 
-**Fixed permutation tables used in every S-DES example:**
+**Fixed permutation tables used in every teaching example:**
 
 $$\text{P10:} \quad [3,\ 5,\ 2,\ 7,\ 4,\ 10,\ 1,\ 9,\ 8,\ 6]$$
 
@@ -1257,14 +1209,14 @@ Read as: output bit 1 = position 6 of $C_i\|D_i$, output bit 2 = position 3, …
 
 Nothing is discarded — bits wrap around from the left end to the right end.
 
-**How $C$ and $D$ fit into the full S-DES key schedule:**
+**How $C$ and $D$ fit into the teaching key schedule:**
 
 ```{figure} ../figures/ch08/sdes_key_schedule.svg
 :name: fig-sdes-key-schedule
 :width: 85%
 :align: center
 
-**S-DES Key Schedule.** The 10-bit master key is permuted by P10 and split into left half $C_0$ (bits 1–5) and right half $D_0$ (bits 6–10). Each half is independently rotated by the shift schedule (LS-1 for round 1, LS-2 for rounds 2 and 3). After each shift, the two halves are concatenated as $C_i \| D_i$ and P8 selects 8 of the 10 bits to form the subkey $K_i$.
+**S-DES Key Schedule.** The 10-bit teaching key is permuted by P10 and split into left half $C_0$ (bits 1–5) and right half $D_0$ (bits 6–10). Each half is independently rotated. After each rotation, the two halves are concatenated as $C_i \| D_i$ and P8 selects 8 of the 10 bits to form a teaching subkey $K_i$.
 ```
 
 ```{admonition} $C$ and $D$ — Why two separate halves?
@@ -1287,13 +1239,15 @@ Only at the very end of each round are they **joined back** ($C_i \| D_i$, givin
 | $C_i \| D_i$ | Concatenation fed into P8 | 10 bits |
 | $K_i$ | Subkey output of P8 for round $i$ | 8 bits |
 
-The same $C/D$ naming convention appears in full DES, where each half is **28 bits** wide.
+The same $C/D$ naming convention appears in standard DES, where each half is **28 bits** wide.
 ```
 
 ---
 
-`````{admonition} Example 4 — S-DES Worked Example: master key 1010000010, find $K_1$, $K_2$, $K_3$
+`````{admonition} Example 4 — S-DES style key schedule: master key 1010000010
 :class: tip
+
+The first two subkeys, $K_1$ and $K_2$, are the ones used in the complete S-DES encryption example in §4.6.1. The third rotation is included only to show how circular shifts continue and how the halves return after a full cycle.
 
 **Given master key (10 bits, positions 1–10 left to right):**
 
@@ -1394,12 +1348,12 @@ $$\boxed{K_3 = \mathtt{00101000}}$$
 | $K_2$ | $\mathtt{01000011}$ | $C_2 = \mathtt{00100}$ | $D_2 = \mathtt{00011}$ |
 | $K_3$ | $\mathtt{00101000}$ | $C_3 = \mathtt{10000}$ | $D_3 = \mathtt{01100}$ |
 
-> **Observation:** After round 3 the halves have returned to $C_0, D_0$ (total rotation = $1+2+2 = 5$ bits, and the register width is 5 bits — a full cycle). This mirrors the full DES property where $C_{16} = C_0$.
+> **Observation:** After round 3 the halves have returned to $C_0, D_0$ (total rotation = $1+2+2 = 5$ bits, and the register width is 5 bits — a full cycle). This mirrors the standard DES property where the total 16-round shift is 28 positions, so $C_{16} = C_0$ and $D_{16} = D_0$.
 `````
 
 ---
 
-`````{admonition} Practice Problem — S-DES Key Schedule: find $K_1$, $K_2$, $K_3$
+`````{admonition} Practice Problem — S-DES style key schedule
 :class: seealso
 
 **Given master key (10 bits):**
@@ -1412,7 +1366,7 @@ $$\text{P10} = [3,5,2,7,4,10,1,9,8,6] \qquad \text{P8} = [6,3,7,4,8,5,10,9]$$
 
 **Shift schedule:** Round 1 → LS-1, Rounds 2 & 3 → LS-2.
 
-Using the four-step procedure above, find $K_1$, $K_2$, and $K_3$.
+Using the four-step procedure above, find $K_1$, $K_2$, and the optional practice value $K_3$.
 
 ```{admonition} Solution
 :class: dropdown
@@ -1480,14 +1434,14 @@ $$\boxed{K_3 = \mathtt{01111010}}$$
 
 ---
 
-### 4.4 Step 3 — The Feistel Round Function (Mangler)
+### 4.4 Step 3 — The Feistel Round Function
 
-```{admonition} S-DES Analogy — Round Function on 4-bit halves
+```{admonition} Teaching Analogy — Round Function on 4-bit Halves
 :class: seealso
 
-The S-DES round function uses the same four sub-steps as DES but on toy-sized data:
+The S-DES round function uses DES-like sub-steps on smaller teaching data. It is smaller than real DES, but it helps students see the order of operations without 32-bit and 48-bit tables:
 
-| Sub-step | S-DES | Full DES |
+| Sub-step | Teaching example | Standard DES |
 |:---:|:---|:---|
 | **① Expand** | **EP**: $R$ (4 bits) → 8 bits via $[4,1,2,3,2,3,4,1]$ | **E-box**: $R$ (32 bits) → 48 bits |
 | **② XOR key** | 8-bit EP output ⊕ 8-bit subkey | 48-bit expansion ⊕ 48-bit subkey |
@@ -1521,7 +1475,7 @@ The round function $F(R_{i-1}, K_i)$ transforms the 32-bit right half using four
 :width: 95%
 :align: center
 
-**All 16 Rounds — Mangler Function and Key Transformation Together.** The left column shows the parallel key schedule producing $K_1, \ldots, K_{16}$; the right column shows the Feistel data path. Each round consumes one subkey and swaps the left and right halves.
+**All 16 Rounds — Round Function and Key Transformation Together.** The left column shows the parallel key schedule producing $K_1, \ldots, K_{16}$; the right column shows the Feistel data path. Each round consumes one subkey and swaps the left and right halves.
 ```
 
 **① Expansion (E-box):** The 32-bit $R_{i-1}$ is expanded to 48 bits by duplicating 16 boundary bits so that adjacent S-box inputs overlap. This creates **cross-S-box diffusion** — a 1-bit change in $R_{i-1}$ affects two S-box inputs simultaneously.
@@ -1606,7 +1560,7 @@ Without the swap before IP⁻¹, the last round would be asymmetric and DES woul
 
 ---
 
-### 4.6 Solved Examples — S-DES and Full DES
+### 4.6 Solved Examples — Teaching Model and Standard DES
 
 ::::{question} DES S-box Lookup
 :type: multiple-choice
@@ -1628,9 +1582,9 @@ A 6-bit input `011011` is fed into S-box **S1**. What are the row and column use
 
 ---
 
-### 4.6.1 Complete S-DES Worked Example — Full Encryption
+### 4.6.1 Teaching Example — Complete S-DES Encryption
 
-This example chains **all five steps** of S-DES into one end-to-end encryption. Fixed tables use the Stallings standard S-DES parameters from §4.3.2 and §4.4.
+This example chains the same style of steps used by DES into one small end-to-end encryption. It is **not** a DES-standard encryption; it is a hand-computable teaching model that prepares you for the full 64-bit DES round trace in §4.6.2.
 
 **Given:**
 - Master key: $K = \mathtt{1010000010}$
@@ -1780,9 +1734,9 @@ $$\boxed{\text{Ciphertext} = \mathtt{10101000}}$$
 
 ---
 
-### 4.6.2 Full DES Round 1 — Numerical Trace (64-bit)
+### 4.6.2 Standard DES Round 1 — Numerical Trace (64-bit)
 
-The table below traces every intermediate value through **Round 1** of full DES on the running 64-bit example. Rounds 2–16 repeat identically with subkeys $K_2,\ldots,K_{16}$.
+The table below traces every intermediate value through **Round 1** of standard DES on the running 64-bit example. Rounds 2–16 repeat identically with subkeys $K_2,\ldots,K_{16}$.
 
 **Given:** Plaintext `123456ABCD132536` (hex) · Key `AABB09182736CCDD` (hex)
 
@@ -1798,10 +1752,10 @@ The table below traces every intermediate value through **Round 1** of full DES 
 | $L_1 = R_0$ | 4.4 | Feistel left update | `18CA18AD` |
 | $R_1 = L_0 \oplus F$ | 4.4 | $\mathtt{14A7D678} \oplus \mathtt{4EDF35EC}$ | `5A78E394` |
 
-```{admonition} S-DES vs Full DES — same structure, different scale
+```{admonition} Teaching Model vs Standard DES — Same Structure, Different Scale
 :class: note
 
-| | S-DES Round 1 (§4.6.1) | DES Round 1 (above) |
+| | Teaching round (§4.6.1) | Standard DES round (above) |
 |:---|:---:|:---:|
 | Block/half size | 8 / 4 bits | 64 / 32 bits |
 | Expansion output | 8 bits | 48 bits |
@@ -1980,6 +1934,11 @@ The last round **omits MixColumns**. An initial AddRoundKey step is applied befo
 AES algorithm — the 4×4 byte state matrix is transformed over 10/12/14 rounds using four operations and per-round subkeys.
 ```
 
+```{admonition} How to read §5
+:class: tip
+Study AES as the **standard 128-bit block cipher**: every block is 16 bytes arranged as a 4×4 state matrix. The worked examples below do not define a smaller AES standard. They are teaching traces that show one byte, one column, or one round so the mechanics are easy to follow before reading a full implementation.
+```
+
 ---
 
 ### 5.1 AES State Matrix
@@ -2015,6 +1974,77 @@ The high-level AES encryption flow is:
 
 AES encryption process — initial key XOR, followed by $N-1$ full rounds, and one final (shortened) round.
 ```
+
+````{prf:example} Standard AES-128 Round 1 — Teaching Trace
+:label: ex-aes-round1-trace
+
+This example uses the standard AES-128 test input from FIPS 197. It is real AES: 128-bit plaintext block, 128-bit key, 4×4 byte state, and the normal Round 1 order.
+
+**Plaintext block:**
+
+$$P=\texttt{00112233445566778899aabbccddeeff}$$
+
+**Cipher key:**
+
+$$K=\texttt{000102030405060708090a0b0c0d0e0f}$$
+
+AES fills the state **column by column**. The plaintext state and key state are therefore:
+
+| Matrix | Row 0 | Row 1 | Row 2 | Row 3 |
+|:---|:---:|:---:|:---:|:---:|
+| Plaintext state | `00 44 88 cc` | `11 55 99 dd` | `22 66 aa ee` | `33 77 bb ff` |
+| Cipher-key state $K_0$ | `00 04 08 0c` | `01 05 09 0d` | `02 06 0a 0e` | `03 07 0b 0f` |
+
+**Initial AddRoundKey:** XOR each state byte with the matching key byte.
+
+| Row | State after $P \oplus K_0$ |
+|:---:|:---:|
+| 0 | `00 40 80 c0` |
+| 1 | `10 50 90 d0` |
+| 2 | `20 60 a0 e0` |
+| 3 | `30 70 b0 f0` |
+
+**Round 1:** apply **SubBytes → ShiftRows → MixColumns → AddRoundKey**.
+
+| Round-1 step | Row 0 | Row 1 | Row 2 | Row 3 |
+|:---|:---:|:---:|:---:|:---:|
+| After SubBytes | `63 09 cd ba` | `ca 53 60 70` | `b7 d0 e0 e1` | `04 51 e7 8c` |
+| After ShiftRows | `63 09 cd ba` | `53 60 70 ca` | `e0 e1 b7 d0` | `8c 04 51 e7` |
+| After MixColumns | `5f 57 f7 1d` | `72 f5 be b9` | `64 bc 3b f9` | `15 92 29 1a` |
+| Round key $K_1$ | `d6 d2 da d6` | `aa af a6 ab` | `74 72 78 76` | `fd fa f1 fe` |
+| After AddRoundKey | `89 85 2d cb` | `d8 5a 18 12` | `10 ce 43 8f` | `e8 68 d8 e4` |
+
+So after Round 1, the AES state is:
+
+$$
+\begin{bmatrix}
+89 & 85 & 2d & cb \\
+d8 & 5a & 18 & 12 \\
+10 & ce & 43 & 8f \\
+e8 & 68 & d8 & e4
+\end{bmatrix}
+$$
+
+**How to study this table:** first verify one byte in SubBytes, then one row in ShiftRows, then one column in MixColumns. For example, after ShiftRows the first column is:
+
+$$[63,\ 53,\ e0,\ 8c]^T$$
+
+MixColumns transforms it into:
+
+$$[5f,\ 72,\ 64,\ 15]^T$$
+
+Finally, AddRoundKey XORs that column with the first column of $K_1$:
+
+$$
+\begin{bmatrix}5f\\72\\64\\15\end{bmatrix}
+\oplus
+\begin{bmatrix}d6\\aa\\74\\fd\end{bmatrix}
+=
+\begin{bmatrix}89\\d8\\10\\e8\end{bmatrix}
+$$
+
+This is the AES version of the DES round trace: each operation is simple locally, but repeated rounds create strong confusion and diffusion across the whole 128-bit block.
+````
 
 ---
 
@@ -2080,7 +2110,7 @@ $$
 \pmod{x^8 + x^4 + x^3 + x + 1}
 $$
 
-Each output byte depends on **all four** input bytes of the column, providing **full intra-column diffusion**. MixColumns is **omitted in the final round** to maintain the encrypt/decrypt symmetry.
+Each output byte depends on **all four** input bytes of the column, providing **full intra-column diffusion**. MixColumns is **omitted in the final round** by the AES design; decryption applies the corresponding inverse operations in reverse order.
 
 ```{figure} ../figures/ch08/aes_mixcolumns.png
 :align: center
@@ -2112,8 +2142,36 @@ AddRoundKey — all 16 state bytes are XORed with the corresponding 16 bytes of 
 
 ```{admonition} Full Diffusion After Two Rounds
 :class: important
-Combining ShiftRows (inter-column spread) with MixColumns (intra-column mix) gives the **wide-trail strategy**: after just **2 full rounds**, every output bit depends on every input bit and every key bit. After 10 rounds this provides overwhelming avalanche — a 1-bit plaintext change flips ~50% of all ciphertext bits.
+Combining ShiftRows (inter-column spread) with MixColumns (intra-column mix) gives the **wide-trail strategy**: after a small number of full rounds, a byte difference spreads across the full state. After 10 rounds this provides strong avalanche — a 1-bit plaintext change flips about half of the ciphertext bits on average.
 ```
+
+````{prf:example} One Byte Through AES SubBytes and AddRoundKey
+:label: ex-aes-byte-operation
+
+A full AES encryption is too long to do by hand, but one byte operation is easy to trace.
+
+Suppose a state byte before SubBytes is:
+
+$$x = \mathtt{53}_{16}$$
+
+The AES S-box maps this byte to:
+
+$$S(\mathtt{53}) = \mathtt{ED}_{16}$$
+
+If the matching round-key byte is:
+
+$$k = \mathtt{2B}_{16}$$
+
+then AddRoundKey XORs the substituted byte with the key byte:
+
+$$\mathtt{ED} \oplus \mathtt{2B} = \mathtt{C6}$$
+
+So for this byte position, the local transformation is:
+
+$$\mathtt{53} \xrightarrow{\text{SubBytes}} \mathtt{ED} \xrightarrow{\text{AddRoundKey}} \mathtt{C6}$$
+
+In real AES this happens to all 16 state bytes, with ShiftRows and MixColumns spreading each byte's influence across the state between key additions.
+````
 
 ---
 
@@ -2417,39 +2475,39 @@ A developer needs to encrypt individual 128-byte database records with AES. Reco
 
 ---
 
-## 7. Interactive AES Demo
+## 7. Interactive Demo: ECB vs GCM
 
 ```{admonition} How to Make It Interactive
 :class: note
-Click the 🚀 **Live Code** button (top of page) to run the cell below. Modify `plaintext` and `key` to experiment.
+Click the **Live Code** button at the top of the page to run the cell below. Modify `block_a`, `block_b`, and the key to see how repeated plaintext blocks behave in ECB and how GCM adds authentication.
 ```
 
 ```{code-cell} python
 :tags: [thebe-init]
 
-def xor_bytes(a, b):
-    return bytes(x ^ y for x, y in zip(a, b))
-
-# Minimal AES-128 ECB using Python's built-in library (no extra install needed)
 try:
     from Crypto.Cipher import AES
     import os
 
-    key = os.urandom(16)          # 128-bit random key
-    plaintext = b"Hello, AES!!!"  # 13 bytes
-    # Pad to 16 bytes (PKCS#7)
-    pad_len = 16 - len(plaintext) % 16
-    padded = plaintext + bytes([pad_len] * pad_len)
+    key = os.urandom(16)
+    block_a = b"PAYMENT:00010000"
+    block_b = b"PAYMENT:00010000"
+    plaintext = block_a + block_b
 
     cipher_ecb = AES.new(key, AES.MODE_ECB)
-    ciphertext = cipher_ecb.encrypt(padded)
+    ecb_ciphertext = cipher_ecb.encrypt(plaintext)
+    ecb_block_1 = ecb_ciphertext[:16]
+    ecb_block_2 = ecb_ciphertext[16:]
 
     cipher_gcm = AES.new(key, AES.MODE_GCM)
     ciphertext_gcm, tag = cipher_gcm.encrypt_and_digest(plaintext)
 
     print(f"Key (hex):            {key.hex()}")
-    print(f"Plaintext:            {plaintext}")
-    print(f"ECB ciphertext (hex): {ciphertext.hex()}")
+    print(f"Plaintext block 1:    {block_a}")
+    print(f"Plaintext block 2:    {block_b}")
+    print(f"ECB block 1 (hex):    {ecb_block_1.hex()}")
+    print(f"ECB block 2 (hex):    {ecb_block_2.hex()}")
+    print(f"ECB blocks equal?     {ecb_block_1 == ecb_block_2}")
     print(f"GCM ciphertext (hex): {ciphertext_gcm.hex()}")
     print(f"GCM auth tag  (hex):  {tag.hex()}")
     print(f"GCM nonce     (hex):  {cipher_gcm.nonce.hex()}")
@@ -2463,11 +2521,11 @@ except ImportError:
 
 ---
 
-## 7. Advanced Attack Techniques
+## 8. Advanced Attack Techniques
 
 Modern block ciphers are designed to resist the following families of attacks. Understanding them explains why DES was retired and why AES's S-boxes and MixColumns were designed the way they were.
 
-### 7.1 Differential Cryptanalysis
+### 8.1 Differential Cryptanalysis
 
 ```{prf:definition} Differential Cryptanalysis
 :label: def-differential
@@ -2484,7 +2542,7 @@ By choosing pairs $(x, x')$ with a specific $\Delta x$ and observing $\Delta y$,
 DES was secretly *designed* with resistance to differential cryptanalysis built into its S-boxes — IBM knew about the technique in the 1970s but it was not published until 1990. A full 16-round DES attack requires $2^{47}$ chosen plaintexts.
 ```
 
-### 7.2 Linear Cryptanalysis
+### 8.2 Linear Cryptanalysis
 
 ```{prf:definition} Linear Cryptanalysis
 :label: def-linear
@@ -2496,7 +2554,7 @@ $$m_{i_1} \oplus m_{i_2} \oplus \cdots \oplus c_{j_1} \oplus c_{j_2} \oplus \cdo
 that holds with probability $\frac{1}{2} + \varepsilon$ for a non-trivial bias $\varepsilon$. Collecting $O(1/\varepsilon^2)$ plaintext–ciphertext pairs yields key bits with statistical significance.
 ```
 
-### 7.3 Meet-in-the-Middle Attack
+### 8.3 Meet-in-the-Middle Attack
 
 ```{prf:definition} Meet-in-the-Middle Attack
 :label: def-mitm
@@ -2510,7 +2568,7 @@ For a double-encryption scheme $c = E_{k_2}(E_{k_1}(m))$, an adversary with one 
 Double-DES has an effective security of only 57 bits (barely better than single DES), not 112 bits.
 ```
 
-### 7.4 Side-Channel Attacks
+### 8.4 Side-Channel Attacks
 
 ```{prf:definition} Side-Channel Attack
 :label: def-side-channel
@@ -2550,22 +2608,32 @@ Which of the following are examples of side-channel attacks? (Select all that ap
 
 ---
 
-## 8. Summary
+## 9. Summary
 
-| Concept | Definition | Cryptographic Role |
+| Concept | Study meaning | Cryptographic role |
 |:---|:---|:---|
-| **Block cipher** | Keyed permutation on $n$-bit blocks | Core symmetric primitive |
-| **Feistel network** | Split-half structure, invertible XOR | DES, Blowfish, CAST |
-| **SPN** | Alternating Sub / Permute / Key-mix layers | AES, PRESENT |
-| **Confusion** | S-box non-linearity | Resists known-plaintext attacks |
-| **Diffusion** | ShiftRows + MixColumns spreading | Causes avalanche effect |
-| **DES** | 56-bit key Feistel, 16 rounds | Broken — historical only |
-| **3DES** | EDE triple application of DES | Deprecated |
-| **AES** | 128-bit block SPN, 10/12/14 rounds | Current standard |
-| **ECB** | Independent block encryption | Insecure — never use |
-| **CBC** | Chained with IV | Legacy — needs separate MAC |
-| **CTR** | Counter keystream, bit-flip malleable | IND-CPA — add MAC |
-| **GCM** | CTR + GHASH authentication | IND-CCA — recommended |
+| **Block cipher** | Keyed permutation on fixed-size $n$-bit blocks | Core symmetric primitive |
+| **Block size** | Number of bits processed per primitive call | Controls birthday-bound limits and mode design |
+| **Confusion** | Non-linear relation between key, plaintext, and ciphertext | Usually supplied by S-boxes |
+| **Diffusion** | One input bit influences many output bits | Supplied by P-boxes, ShiftRows, MixColumns |
+| **Avalanche effect** | One-bit change flips about half the output bits | Evidence of strong repeated confusion/diffusion |
+| **Feistel network** | Split-half structure with XOR feedback | Makes the whole cipher invertible even if $F$ is not |
+| **SPN** | Alternating substitution, permutation/mixing, key addition | AES design family; internal layers must be invertible |
+| **DES** | 64-bit block, 56-bit key, 16-round Feistel cipher | Historically important, now broken by key search |
+| **3DES** | EDE triple application of DES | Deprecated transition cipher |
+| **AES** | 128-bit block SPN with 128/192/256-bit keys | Current standard block cipher |
+| **ECB** | Independent block encryption | Insecure because patterns remain visible |
+| **CBC** | Chains blocks using an IV | Legacy confidentiality mode; needs authentication |
+| **CTR** | Uses encrypted counters as a keystream | Fast and parallel, but malleable without a MAC |
+| **GCM** | CTR plus GHASH authentication | Recommended AEAD mode for new systems |
+
+```{admonition} What to Remember
+:class: tip
+- A block cipher is only a one-block primitive; a mode of operation is required for real messages.
+- DES is valuable to study because its Feistel design teaches the mechanics, but its 56-bit key is no longer secure.
+- AES is the modern block cipher standard, but AES-ECB is still insecure because the mode leaks patterns.
+- New applications should normally use authenticated encryption, such as AES-GCM, with a nonce that is never reused for the same key.
+```
 
 ---
 
@@ -2629,6 +2697,83 @@ The effect is **limited to the first block**. For block $i > 1$: $C_i = E_K(P_i 
 **3. Fix:**
 
 Generate a fresh **random 16-byte IV** using a cryptographically secure random number generator (`os.urandom(16)` in Python) for every encryption. Prepend the IV to the ciphertext (it is not secret). Better yet, switch to **AES-GCM** which provides both confidentiality and authentication.
+```
+
+```{exercise} S-box Lookup
+:label: ch08-ex-sbox-lookup
+
+Using the toy S-box from {prf:ref}`ex-sbox-lookup`, compute the output for input $x=\mathtt{1101}_2$.
+```
+
+```{solution} ch08-ex-sbox-lookup
+:label: sol-ch08-ex-sbox-lookup
+:class: dropdown
+
+$\mathtt{1101}_2 = \mathtt{D}_{16}$. The toy S-box table gives $S(\mathtt{D})=\mathtt{9}$, so the output is:
+
+$$\mathtt{9}_{16}=\mathtt{1001}_2$$
+```
+
+```{exercise} P-box Classification
+:label: ch08-ex-pbox-classification
+
+A permutation table maps 6 input bits to 4 output bits by selecting input positions $[2,6,1,5]$.
+
+1. Is this a straight, expansion, or compression P-box?
+2. Is it invertible?
+3. Explain the reason in one sentence.
+```
+
+```{solution} ch08-ex-pbox-classification
+:label: sol-ch08-ex-pbox-classification
+:class: dropdown
+
+It is a **compression P-box** because it has fewer outputs than inputs: $m=4<n=6$.
+
+It is **not invertible**. Input bits 3 and 4 are dropped by the table, so their values cannot be recovered from the 4-bit output.
+```
+
+```{exercise} AES Round Operation Identification
+:label: ch08-ex-aes-operation
+
+For each AES operation, identify whether its main role is confusion, diffusion, or key injection:
+
+1. SubBytes
+2. ShiftRows
+3. MixColumns
+4. AddRoundKey
+```
+
+```{solution} ch08-ex-aes-operation
+:label: sol-ch08-ex-aes-operation
+:class: dropdown
+
+1. **SubBytes:** confusion, because it applies the non-linear AES S-box to each byte.
+2. **ShiftRows:** diffusion, because it moves bytes across columns.
+3. **MixColumns:** diffusion, because each output byte depends on all four input bytes of a column.
+4. **AddRoundKey:** key injection, because it XORs the current state with secret round-key material.
+```
+
+```{exercise} Nonce Reuse in CTR/GCM
+:label: ch08-ex-nonce-reuse
+
+Two different plaintexts $P_1$ and $P_2$ are encrypted with AES-CTR under the same key and the same nonce, producing ciphertexts $C_1$ and $C_2$.
+
+1. Show what an attacker learns from $C_1 \oplus C_2$.
+2. Why is the same mistake even worse in AES-GCM?
+```
+
+```{solution} ch08-ex-nonce-reuse
+:label: sol-ch08-ex-nonce-reuse
+:class: dropdown
+
+CTR encryption has the form $C_i=P_i\oplus Z$, where $Z$ is the keystream generated from the key and nonce. If the same keystream is reused:
+
+$$C_1\oplus C_2=(P_1\oplus Z)\oplus(P_2\oplus Z)=P_1\oplus P_2$$
+
+The keystream cancels. The attacker learns the XOR of the two plaintexts, which is often enough to recover both messages when they contain predictable structure.
+
+In GCM, nonce reuse also damages the GHASH authentication mechanism. This can allow tag forgery, so the attacker may gain both confidentiality and integrity attacks.
 ```
 
 ---

@@ -121,6 +121,44 @@ A **straight P-box** has the same number of inputs and outputs. Every input bit 
 - **Invertible:** yes — the reverse permutation undoes it exactly.
 - **Used in:** DES final P-box (after S-boxes in each round), AES ShiftRows.
 
+````{admonition} Solved Example — Straight P-box
+:class: tip
+
+**Given:** 8-bit input `0 1 0 1 0 1 0 1` (positions 1–8) and the permutation table below.
+
+| Output position | Takes input bit |
+|:---:|:---:|
+| 1 | 4 |
+| 2 | 1 |
+| 3 | 6 |
+| 4 | 3 |
+| 5 | 8 |
+| 6 | 5 |
+| 7 | 2 |
+| 8 | 7 |
+
+**Step-by-step:**
+
+```
+Input:   pos  1  2  3  4  5  6  7  8
+         bit  0  1  0  1  0  1  0  1
+
+Output pos 1  ← input bit 4  = 1
+Output pos 2  ← input bit 1  = 0
+Output pos 3  ← input bit 6  = 1
+Output pos 4  ← input bit 3  = 0
+Output pos 5  ← input bit 8  = 1
+Output pos 6  ← input bit 5  = 0
+Output pos 7  ← input bit 2  = 1
+Output pos 8  ← input bit 7  = 0
+
+Output:  1  0  1  0  1  0  1  0
+```
+
+**Result:** `01010101` → `10101010`  
+Every bit moved to a new position; **no bit was lost or duplicated**.
+````
+
 ---
 
 #### 1.1.2 Expansion P-box ($m > n$)
@@ -138,6 +176,40 @@ An **expansion P-box** has more outputs than inputs. Some input bits are **dupli
 - **Invertible:** **no** — because one input maps to multiple outputs, the decryption algorithm cannot determine the unique original input from the output alone.
 - **Used in:** DES E-box (expands the 32-bit right half to 48 bits before XOR with the subkey).
 
+````{admonition} Solved Example — Expansion P-box
+:class: tip
+
+**Given:** 4-bit input `0 1 0 1` expanded to 6 bits using the table below.
+
+| Output position | Takes input bit |
+|:---:|:---:|
+| 1 | 4 |
+| 2 | 1 |
+| 3 | 2 |
+| 4 | 3 |
+| 5 | 4 |
+| 6 | 1 |
+
+**Step-by-step:**
+
+```
+Input:   pos  1  2  3  4
+         bit  0  1  0  1
+
+Output pos 1  ← input bit 4  = 1
+Output pos 2  ← input bit 1  = 0
+Output pos 3  ← input bit 2  = 1
+Output pos 4  ← input bit 3  = 0
+Output pos 5  ← input bit 4  = 1   ← bit 4 used again (duplicated)
+Output pos 6  ← input bit 1  = 0   ← bit 1 used again (duplicated)
+
+Output:  1  0  1  0  1  0
+```
+
+**Result:** `0101` (4 bits) → `101010` (6 bits)  
+Input bits **1** and **4** each appear **twice** in the output — that is what makes this non-invertible.
+````
+
 ---
 
 #### 1.1.3 Compression P-box ($m < n$)
@@ -154,6 +226,40 @@ A **compression P-box** has fewer outputs than inputs. Some input bits are **dro
 
 - **Invertible:** **no** — dropped bits are lost; decryption cannot recover them.
 - **Used in:** DES PC-1 (64-bit key → 56 bits by dropping 8 parity bits) and PC-2 (56 bits → 48-bit subkey).
+
+````{admonition} Solved Example — Compression P-box
+:class: tip
+
+**Given:** 8-bit input `0 1 0 1 0 1 0 1` compressed to 5 bits using the table below (3 bits are dropped).
+
+| Output position | Takes input bit |
+|:---:|:---:|
+| 1 | 2 |
+| 2 | 5 |
+| 3 | 1 |
+| 4 | 7 |
+| 5 | 4 |
+
+**Step-by-step:**
+
+```
+Input:   pos  1  2  3  4  5  6  7  8
+         bit  0  1  0  1  0  1  0  1
+
+Output pos 1  ← input bit 2  = 1
+Output pos 2  ← input bit 5  = 0
+Output pos 3  ← input bit 1  = 0
+Output pos 4  ← input bit 7  = 0
+Output pos 5  ← input bit 4  = 1
+
+Dropped:  bits at positions 3, 6, 8  (values 0, 1, 1 — permanently lost)
+
+Output:  1  0  0  0  1
+```
+
+**Result:** `01010101` (8 bits) → `10001` (5 bits)  
+Bits at positions **3, 6, 8** are discarded — the original 8-bit input **cannot** be recovered from the 5-bit output.
+````
 
 ---
 
@@ -175,7 +281,7 @@ This is why **Feistel networks** (DES) use non-invertible components freely — 
 
 ### 1.2 S-boxes (Substitution Boxes)
 
-An **S-box** (substitution box) is the primary tool for **confusion**. Unlike P-boxes, which rearrange bits, S-boxes **replace** a group of bits with a completely different group in a non-linear way.
+An **S-box** (substitution box), also known as a **swap box**, is the primary tool for **confusion**. Unlike P-boxes, which rearrange bits, S-boxes **replace** a group of bits with a completely different group in a non-linear way.
 
 ```{prf:definition} S-box
 :label: def-sbox
@@ -187,12 +293,162 @@ An **S-box** is a fixed lookup table that maps an $n$-bit input to an $m$-bit ou
 Most block ciphers use $6 \to 4$ bit S-boxes (DES) or $8 \to 8$ bit S-boxes (AES).
 ```
 
+**Function:** Each group of input bits is substituted with a different group of bits according to a predetermined replacement table. This substitution is the core mechanism by which S-boxes introduce complexity into the cipher.
+
+**Purpose:** The primary goal of S-boxes is to introduce **non-linearity** into the cryptographic algorithm, making it resistant to statistical attacks — especially **linear cryptanalysis** and **differential cryptanalysis**. Without non-linearity, an attacker could model the cipher as a system of linear equations and solve for the key efficiently.
+
+**Construction:** S-boxes are typically constructed using mathematical procedures such as **modular arithmetic** or **polynomial transformations over finite fields** (e.g., multiplicative inversion in $GF(2^8)$ for AES). The construction is a critical design decision — a poorly built S-box can undermine the entire cipher's security.
+
+```{admonition} S-boxes in AES (SubBytes)
+:class: note
+In the **Advanced Encryption Standard (AES)**, a single 8-bit S-box is used in the **SubBytes** step of each round. Every byte of the 16-byte state is independently replaced with the corresponding byte from the S-box table. The AES S-box is constructed by:
+1. Computing the **multiplicative inverse** of each byte value in $GF(2^8)$ (with $0 \mapsto 0$)
+2. Applying an **affine transformation** over $GF(2)$ to remove simple algebraic structure
+
+This two-step construction ensures both non-linearity and resistance to algebraic attacks.
+```
+
+**Block-size flexibility:** The size of an S-box depends on the block size of the cipher. Common configurations are:
+
+| S-box width | Used in | Note |
+|:---:|:---:|:---|
+| 4-bit in, 4-bit out | PRESENT, lightweight ciphers | Compact, suited for hardware |
+| 6-bit in, 4-bit out | DES (S1–S8) | Non-square mapping |
+| 8-bit in, 8-bit out | AES, Blowfish | Most common in modern ciphers |
+| 32-bit in, 32-bit out | Some 64/128-bit block ciphers | Larger tables, stronger confusion |
+
 | | S-box | P-box |
 |:---:|:---:|:---:|
 | **Shannon property** | Confusion | Diffusion |
 | **Operation** | Non-linear substitution | Bit rearrangement (linear) |
 | **DES example** | S1–S8: $6 \to 4$ bits each | E-box (expansion), P-box (straight), PC-1/PC-2 (compression) |
 | **AES example** | SubBytes: $8 \to 8$ bits | ShiftRows, MixColumns |
+
+---
+
+### 1.2.1 Simple S-Box Example (16-bit)
+
+The following example illustrates a **16-bit S-box**: the plaintext block has 16 bit positions (indices 0–15), and each position is remapped to a different position defined by the substitution key phrase. For instance, bit 0 of the plaintext is replaced by bit 10 of the key phrase.
+
+```{admonition} Important Note on Block Size Compatibility
+:class: warning
+This is a **16-bit S-box illustration only**. In practice, the S-box size must match the block size of your cipher — 16-bit, 32-bit, 64-bit, or larger. The plaintext block size and the key phrase must be **compatible in size** with the requirements of the cryptographic algorithm being used.
+```
+
+````{admonition} Solved Example — 16-bit S-Box
+:class: tip
+
+**Given:**
+
+| | Value (binary) | Hex |
+|:---|:---:|:---:|
+| **Plaintext block** | `1010 1100 0011 1110` | `0xAC3E` |
+| **Key phrase** | `0110 1001 1101 0101` | `0x69D5` |
+
+**S-box lookup table** — `sbox[output position] = key phrase bit to take`:
+
+| Output bit | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Takes key bit | 10 | 5 | 14 | 3 | 7 | 0 | 11 | 13 | 2 | 8 | 1 | 6 | 15 | 9 | 4 | 12 |
+
+**Step-by-step substitution:**
+
+```
+Key phrase bits (indexed 0–15):
+  pos:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+  bit:  0  1  1  0  1  0  0  1  1  1  0  1  0  1  0  1
+
+Output bit 0  ← key bit 10 = 0
+Output bit 1  ← key bit  5 = 0
+Output bit 2  ← key bit 14 = 0
+Output bit 3  ← key bit  3 = 0
+Output bit 4  ← key bit  7 = 1
+Output bit 5  ← key bit  0 = 0
+Output bit 6  ← key bit 11 = 1
+Output bit 7  ← key bit 13 = 1
+Output bit 8  ← key bit  2 = 1
+Output bit 9  ← key bit  8 = 1
+Output bit 10 ← key bit  1 = 1
+Output bit 11 ← key bit  6 = 0
+Output bit 12 ← key bit 15 = 1
+Output bit 13 ← key bit  9 = 1
+Output bit 14 ← key bit  4 = 1
+Output bit 15 ← key bit 12 = 0
+
+Ciphertext:  0 0 0 0 1 0 1 1  1 1 1 0 1 1 1 0
+           = 0000 1011 1110 1110  =  0x0BEE
+```
+
+**Result:** `0xAC3E` → `0x0BEE`
+
+Note that the **plaintext value itself is not used** — only its structure determines which key bits to select. The output depends entirely on the key phrase and the S-box table, which is the source of confusion.
+````
+
+**What the example shows:**
+- The S-box table defines 16 substitution rules — one per output bit position.
+- Each output bit is taken from a specific key phrase bit, not the plaintext bit at that position.
+- Changing a single bit in the key phrase can alter multiple output bits at once — demonstrating the **non-linearity** S-boxes are designed to provide.
+- A real cipher applies this operation over bytes (not individual bits) and repeats it across many rounds.
+
+```{admonition} S-Box Uses the Key — Not the Plaintext
+:class: tip
+
+The S-box relies on the **secret key** as the source that drives bit transformation — not the plaintext. This means that even if an attacker knows the plaintext, they still cannot reproduce or predict the output without knowing the key.
+
+The key is what makes each substitution step unique and secret. Without it, no one can reverse or replicate the transformation — which is exactly what keeps the encryption secure.
+```
+
+---
+
+### 1.2.2 Linearity vs Non-Linearity in S-Boxes
+
+One of the most important properties of a good S-box is **non-linearity**. To understand why, we first need to understand what linearity means — and why it is dangerous in a cipher.
+
+#### What is a Linear Function?
+
+A function $f$ is **linear** if it satisfies:
+
+$$f(a \oplus b) = f(a) \oplus f(b)$$
+
+for all inputs $a$ and $b$ (where $\oplus$ is XOR). In plain terms: the output of $f$ on a combination of inputs can be predicted from the outputs on individual inputs.
+
+**Example of a linear substitution:** shift each input byte by a fixed amount.
+
+$$f(x) = x \oplus k$$
+
+If an attacker knows a few plaintext–ciphertext pairs, they can write linear equations and **solve for the key directly** — this is the core idea behind **linear cryptanalysis**.
+
+#### Why Non-Linearity Matters
+
+A **non-linear** S-box breaks this predictability. No simple equation $\sum a_i \cdot x_i = b$ (mod 2) holds for all input–output pairs. This forces an attacker to test exponentially more combinations — making cryptanalysis infeasible.
+
+```{admonition} Key Intuition
+:class: tip
+**Linear function** → attacker can set up equations and solve for the key with very few known plaintexts.
+
+**Non-linear S-box** → no such equations exist; the attacker gains almost no information from known pairs.
+```
+
+#### Interactive Plot: Linear vs Non-Linear Substitution
+
+The plots below compare a **linear** substitution (XOR with a constant) against a **non-linear** S-box side by side, and show how many output bits change when a single input bit is flipped — the basis of differential cryptanalysis resistance.
+
+```{figure} ../figures/ch08/sbox_linear_vs_nonlinear.png
+:align: center
+:width: 90%
+:alt: Linear vs Non-Linear S-box substitution plots
+```
+
+**Reading the plots:**
+
+| Plot | What it shows |
+|:---|:---|
+| **Top-left** (linear) | A perfectly straight diagonal line — output is a simple, predictable shift of input |
+| **Top-right** (AES S-box) | A scrambled, irregular scatter — no visible pattern between input and output |
+| **Bottom-left** (linear bit-flip) | Flipping 1 input bit **always** flips exactly 1 output bit — trivially exploitable |
+| **Bottom-right** (AES bit-flip) | Flipping 1 input bit changes **1 to 8** output bits unpredictably — strong non-linearity |
+
+The bottom histograms are the core of **linear cryptanalysis resistance**: if an attacker can find a pattern like "bit $i$ of the output always follows bit $j$ of the input", they can build linear approximations and recover the key. A good S-box makes every such approximation have close to a 50% error rate — effectively useless.
 
 ---
 
@@ -267,7 +523,11 @@ $$R_i = L_{i-1} \oplus F(R_{i-1},\; K_i)$$
 
 where $F$ is the **round function** and $K_i$ is the $i$-th **subkey** produced by the key schedule.
 
-**Ciphertext:** $(C_L,\; C_R) = (L_r,\; R_r)$
+**Final swap (after round $r$):**
+
+$$C_L = R_r, \quad C_R = L_r$$
+
+The halves are exchanged one final time so that the decryption circuit is **identical** to encryption — only the subkey order changes.
 ```
 
 ```{figure} ../figures/ch08/feistel_encrypt.avif
@@ -275,7 +535,20 @@ where $F$ is the **round function** and $K_i$ is the $i$-th **subkey** produced 
 :width: 60%
 :align: center
 
-**Feistel Cipher — Encryption.** The plaintext block is split into left half $L_0$ and right half $R_0$. In each round, the right half passes through the round function $F$ together with a subkey $K_i$; the result is XORed into the left half, and the halves swap. After $r$ rounds the concatenation $(L_r, R_r)$ is the ciphertext.
+**Feistel Cipher — Encryption.** The plaintext block is split into left half $L_0$ and right half $R_0$. In each round, the right half passes through the round function $F$ together with a subkey $K_i$; the result is XORed into the left half, and the halves swap. After $r$ rounds a **final swap** produces the ciphertext $(R_r, L_r)$ — note the swapped order.
+```
+
+```{admonition} Two Feistel Conventions
+:class: note
+
+Two conventions appear in the literature:
+
+| | After last round | Ciphertext output | Key property |
+|:---|:---|:---|:---|
+| **Convention A — no final swap** | Output $(L_r, R_r)$ directly | $L_r \| R_r$ | Simpler to describe |
+| **Convention B — final swap** (DES-style) | Swap halves once more | $R_r \| L_r$ | Encryption and decryption are **the exact same circuit** |
+
+**This book uses Convention B**, matching the diagrams above. The one extra swap after the last round means you can run the identical hardware circuit in both directions — only the subkey order changes. Without the final swap, decryption would require an extra un-swap step not present in the encryption path.
 ```
 
 ### 2.3 Decryption Structure
@@ -283,10 +556,12 @@ where $F$ is the **round function** and $K_i$ is the $i$-th **subkey** produced 
 ```{prf:definition} Feistel Network — Decryption
 :label: def-feistel-dec
 
-**Decryption** uses the **identical circuit** but applies the subkeys in **reverse order** $(K_r, K_{r-1}, \ldots, K_1)$:
+**Decryption** uses the **identical circuit** and the **same round equations**, applying subkeys in **reverse order** $(K_r, K_{r-1}, \ldots, K_1)$:
 
-$$R_{i-1} = L_i$$
-$$L_{i-1} = R_i \oplus F(L_i,\; K_i)$$
+$$L_i = R_{i-1}$$
+$$R_i = L_{i-1} \oplus F(R_{i-1},\; K_i)$$
+
+**Final swap (after round $r$):** Plaintext $P = (R_r,\; L_r)$
 
 The round function $F$ is **never inverted** — the XOR structure of the network provides invertibility for free.
 ```
@@ -296,7 +571,7 @@ The round function $F$ is **never inverted** — the XOR structure of the networ
 :width: 60%
 :align: center
 
-**Feistel Cipher — Decryption.** The ciphertext block $(L_r, R_r)$ enters the same circuit with subkeys applied in reverse order. Each round undoes one encryption round exactly, recovering $(L_0, R_0)$ from the final output.
+**Feistel Cipher — Decryption.** The ciphertext $(R_r, L_r)$ is fed into the same circuit. Note that the ciphertext's left half is $R_r$ and right half is $L_r$ — the mirror image of encryption's final swap. After $r$ rounds with reversed subkeys, a final swap recovers the plaintext $(L_0, R_0)$.
 ```
 
 ```{admonition} Why Feistel Networks Are Elegant
@@ -337,7 +612,7 @@ Decryption uses $K_{16}, K_{15}, \ldots, K_1$ (same schedule, reversed).
 - Round function: $F(R, K_i) = R \oplus K_i$ (XOR, for simplicity)
 - Plaintext: $P = L_0 \| R_0 = 0011\;1010$
 
----
+
 
 **ENCRYPTION**
 
@@ -358,30 +633,36 @@ $$R_2 = L_1 \oplus F(R_1, K_2) = 1010 \oplus (0011 \oplus 0110) = 1010 \oplus 01
 $$L_3 = R_2 = 1111$$
 $$R_3 = L_2 \oplus F(R_2, K_3) = 0011 \oplus (1111 \oplus 1100) = 0011 \oplus 0011 = 0000$$
 
-**Ciphertext:** $C = L_3 \| R_3 = \mathbf{1111\;0000}$
+**Final swap:**
 
----
+$$C_L = R_3 = 0000, \quad C_R = L_3 = 1111$$
 
-**DECRYPTION** (same circuit, subkeys reversed: $K_3, K_2, K_1$)
+**Ciphertext:** $C = R_3 \| L_3 = \mathbf{0000\;1111}$
 
-Starting state: $L_3 = 1111$, $R_3 = 0000$
 
-**Round 1 of decryption** (subkey $K_3 = 1100$):
 
-$$R_2 = L_3 = 1111$$
-$$L_2 = R_3 \oplus F(L_3, K_3) = 0000 \oplus (1111 \oplus 1100) = 0000 \oplus 0011 = 0011$$
+**DECRYPTION** (exact same circuit, subkeys reversed: $K_3, K_2, K_1$)
 
-**Round 2 of decryption** (subkey $K_2 = 0110$):
+The ciphertext $C = 0000\;1111$ is fed into the same Feistel circuit. Label its halves as the decryption starting state:
 
-$$R_1 = L_2 = 0011$$
-$$L_1 = R_2 \oplus F(L_2, K_2) = 1111 \oplus (0011 \oplus 0110) = 1111 \oplus 0101 = 1010$$
+$$L_0 = C_L = 0000, \quad R_0 = C_R = 1111$$
 
-**Round 3 of decryption** (subkey $K_1 = 1010$):
+**Round 1** (subkey $K_3 = 1100$):
 
-$$R_0 = L_1 = 1010$$
-$$L_0 = R_1 \oplus F(L_1, K_1) = 0011 \oplus (1010 \oplus 1010) = 0011 \oplus 0000 = 0011$$
+$$L_1 = R_0 = 1111$$
+$$R_1 = L_0 \oplus F(R_0, K_3) = 0000 \oplus (1111 \oplus 1100) = 0000 \oplus 0011 = 0011$$
 
-**Recovered plaintext:** $P = L_0 \| R_0 = \mathbf{0011\;1010}$ ✓
+**Round 2** (subkey $K_2 = 0110$):
+
+$$L_2 = R_1 = 0011$$
+$$R_2 = L_1 \oplus F(R_1, K_2) = 1111 \oplus (0011 \oplus 0110) = 1111 \oplus 0101 = 1010$$
+
+**Round 3** (subkey $K_1 = 1010$):
+
+$$L_3 = R_2 = 1010$$
+$$R_3 = L_2 \oplus F(R_2, K_1) = 0011 \oplus (1010 \oplus 1010) = 0011 \oplus 0000 = 0011$$
+
+**Final swap:** $P = R_3 \| L_3 = 0011 \| 1010 = \mathbf{0011\;1010}$ ✓
 
 The original plaintext is perfectly recovered.
 ```
@@ -471,20 +752,112 @@ DES processes a 64-bit plaintext block through four sequential phases. The **dat
 
 ---
 
+### 4.1.1 Road Map — Five Steps, Two Scales
+
+Every operation in DES has a smaller twin in **S-DES** (Simplified DES, 8-bit blocks, 10-bit key). The table below maps them side by side. For each step (§4.2–4.5) you will see a blue **S-DES Analogy** box first, then the full DES version — same logic, bigger tables.
+
+| Step | What happens | S-DES (8-bit / 10-bit key) | Full DES (64-bit / 56-bit key) |
+|:---:|:---|:---|:---|
+| **Key pre-processing** | Remove parity, permute key bits | No parity bits — all 10 key bits used; apply **P10** | 8 parity bits dropped; 56 bits permuted by **PC-1** |
+| **Step 1: IP** | Scramble plaintext bits | **IP** permutes 8 bits with $[2,6,3,1,4,8,5,7]$; split → $L_0$ (4 bits) + $R_0$ (4 bits) | **IP** permutes 64 bits with 8×8 table; split → $L_0$ (32 bits) + $R_0$ (32 bits) |
+| **Step 2: Key Schedule** | Generate one subkey per round | P10 → split → LS-1/LS-2 → **P8** → $K_1,K_2$ (8 bits each) | PC-1 → split → 16 shifts → **PC-2** → $K_1\ldots K_{16}$ (48 bits each) |
+| **Step 3: Rounds** | Mix plaintext with key | **2 rounds**: EP (4→8 bits) → XOR → S0+S1 (8→4 bits) → P4 | **16 rounds**: E (32→48 bits) → XOR → S1–S8 (48→32 bits) → P32 |
+| **Swap** | Re-order halves | Swap $L_2 \leftrightarrow R_2$ after round 2 | Swap $L_{16} \leftrightarrow R_{16}$ after round 16 |
+| **Step 4: IP⁻¹** | Undo IP scrambling | **IP⁻¹** with $[4,1,3,5,7,2,8,6]$ → 8-bit ciphertext | **IP⁻¹** with 8×8 table → 64-bit ciphertext |
+
+```{admonition} How to read §4.2–4.5
+:class: tip
+Each step section explains the **full DES operation first** (64-bit block / 56-bit key). A **blue S-DES Analogy box** then illustrates the same idea on a toy scale (8-bit block / 10-bit key) so you can verify it by hand. The complete end-to-end S-DES encryption example in **§4.6.1** chains all steps together.
+```
+
+---
+
 ### 4.2 Step 1 — Initial Permutation (IP)
 
-The 64-bit plaintext block is reordered by the fixed **IP table** before the first Feistel round. Reading the table row by row, each entry specifies which input bit arrives at that output position:
+Before the first Feistel round, DES applies a fixed, publicly known **Initial Permutation (IP)** to the 64-bit plaintext block. IP simply reorders the bits — no XOR, no key material, no S-box. The permuted block is then split into two 32-bit halves, $L_0$ and $R_0$, which feed into the 16 rounds.
 
-$$\text{IP}:\quad[58,\;50,\;42,\;34,\;26,\;18,\;10,\;2,\;\;60,\;52,\;\ldots,\;\;63,\;55,\;47,\;39,\;31,\;23,\;15,\;7]$$
+The permutation is defined by an 8×8 lookup table. Each cell holds **the input bit number** that is routed to that output position (output bits are numbered 1–64, read left-to-right, top-to-bottom):
 
-Output bit 1 comes from input bit 58; output bit 2 from input bit 50; …; output bit 64 from input bit 7.
+Each cell is the **input** bit number whose value is placed at that output position. Read the table left-to-right, top-to-bottom for output bits 1 → 64.
+
+| Output bits | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th | 8th |
+|:-----------:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **1 – 8**   | 58  | 50  | 42  | 34  | 26  | 18  | 10  |  2  |
+| **9 – 16**  | 60  | 52  | 44  | 36  | 28  | 20  | 12  |  4  |
+| **17 – 24** | 62  | 54  | 46  | 38  | 30  | 22  | 14  |  6  |
+| **25 – 32** | 64  | 56  | 48  | 40  | 32  | 24  | 16  |  8  |
+| **33 – 40** | 57  | 49  | 41  | 33  | 25  | 17  |  9  |  1  |
+| **41 – 48** | 59  | 51  | 43  | 35  | 27  | 19  | 11  |  3  |
+| **49 – 56** | 61  | 53  | 45  | 37  | 29  | 21  | 13  |  5  |
+| **57 – 64** | 63  | 55  | 47  | 39  | 31  | 23  | 15  |  7  |
+
+**How to read the table:** Row "1 – 8", 1st column → output bit 1 takes input bit **58**. Row "1 – 8", 2nd column → output bit 2 takes input bit **50**, and so on across all 64 output positions.
+
+```{admonition} Worked Example — tracing IP on plaintext 123456ABCD132536
+:class: seealso
+
+> **Plaintext:** `123456ABCD132536` (hex)
+
+---
+
+**Step 1 — Convert hex to binary and label every bit 1 through 64**
+
+Each hex digit = 4 bits, so two hex digits = one byte = 8 bits.
+
+| Bit positions | 1 – 8 | 9 – 16 | 17 – 24 | 25 – 32 | 33 – 40 | 41 – 48 | 49 – 56 | 57 – 64 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Hex byte | `12` | `34` | `56` | `AB` | `CD` | `13` | `25` | `36` |
+| Binary | `0001 0010` | `0011 0100` | `0101 0110` | `1010 1011` | `1100 1101` | `0001 0011` | `0010 0101` | `0011 0110` |
+
+Write the full 64-bit string with each bit indexed:
+
+| Position  |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|:---------:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Bit value |  0 |  0 |  0 |  1 |  0 |  0 |  1 |  0 |  0 |  0 |  1 |  1 |  0 |  1 |  0 |  0 |
+
+| Position  | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 |
+|:---------:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Bit value |  0 |  1 |  0 |  1 |  0 |  1 |  1 |  0 |  1 |  0 |  1 |  0 |  1 |  0 |  1 |  1 |
+
+| Position  | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 |
+|:---------:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Bit value |  1 |  1 |  0 |  0 |  1 |  1 |  0 |  1 |  0 |  0 |  0 |  1 |  0 |  0 |  1 |  1 |
+
+| Position  | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 62 | 63 | 64 |
+|:---------:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Bit value |  0 |  0 |  1 |  0 |  0 |  1 |  0 |  1 |  0 |  0 |  1 |  1 |  0 |  1 |  1 |  0 |
+
+---
+
+**Step 2 — Apply the IP table: pick bits in the order the table specifies**
+
+The IP table (row 1) says: output bits 1–8 come from input positions **58, 50, 42, 34, 26, 18, 10, 2**.
+Look up each position in the numbered bit string above:
+
+| Output bit | Takes input bit | Input bit value |
+|:----------:|:---------------:|:---------------:|
+| 1 | **58** | bit 58 = **0** |
+| 2 | **50** | bit 50 = **0** |
+| 3 | **42** | bit 42 = **0** |
+| 4 | **34** | bit 34 = **1** |
+| 5 | **26** | bit 26 = **0** |
+| 6 | **18** | bit 18 = **1** |
+| 7 | **10** | bit 10 = **0** |
+| 8 |  **2** | bit  2 = **0** |
+
+→ Output bits 1–8 = `0001 0100` = **`14` hex** ✓
+
+Repeat the same lookup for rows 2–8 of the IP table. After all 64 output bits are filled, split at the midpoint:
+
+$$\text{IP}(\mathtt{123456ABCD132536}) = \underbrace{\mathtt{14A7D678}}_{L_0\ (bits\ 1\text{–}32)} \;\; \underbrace{\mathtt{18CA18AD}}_{R_0\ (bits\ 33\text{–}64)}$$
+```
 
 ```{figure} ../figures/ch08/des_initial_permutation.png
 :name: fig-des-ip
 :width: 75%
 :align: center
 
-**Initial Permutation in DES.** Bit positions highlighted in green are the parity bits that PC-1 will discard during key transformation. The IP table rearranges the 64 plaintext bits into a new order before the first Feistel round.
+**Initial Permutation (IP) wiring diagram.** Each line shows one input bit being routed to its output position. The upper half of outputs (1–32) form $L_0$; the lower half (33–64) form $R_0$.
 ```
 
 ```{admonition} Cryptographic Role of IP
@@ -495,6 +868,29 @@ IP provides **no cryptographic security** — it is a fixed, publicly known perm
 The permuted 64-bit block is split into:
 - $L_0$ = bits 1–32 of the permuted block
 - $R_0$ = bits 33–64 of the permuted block
+
+```{admonition} S-DES Analogy — IP on 8 bits
+:class: seealso
+
+S-DES applies the **same idea** at toy scale: a fixed 8-bit permutation before the first round.
+
+$$\text{IP} = [2,\ 6,\ 3,\ 1,\ 4,\ 8,\ 5,\ 7]$$
+
+For plaintext $P = p_1 p_2 p_3 p_4 p_5 p_6 p_7 p_8$, the output is $p_2\, p_6\, p_3\, p_1\, p_4\, p_8\, p_5\, p_7$.
+The permuted 8 bits are split into: $L_0 = \text{bits }1\text{–}4$ and $R_0 = \text{bits }5\text{–}8$.
+
+**Mini-example** — plaintext $\mathtt{11010111}$:
+
+| Pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Bit | 1 | 1 | 0 | 1 | 0 | 1 | 1 | 1 |
+
+IP picks positions $[2,6,3,1,4,8,5,7]$: bits $1,1,0,1,1,1,0,1$ → $\mathtt{11011101}$
+
+$$L_0 = \mathtt{1101} \qquad R_0 = \mathtt{1101}$$
+
+Same logic as DES — just 8 wires instead of 64.
+```
 
 ---
 
@@ -525,9 +921,7 @@ DES derives sixteen 48-bit subkeys $K_1, \ldots, K_{16}$ from the 64-bit master 
 
 **Output:** Subkeys $K_1, K_2, \ldots, K_{16}$, each 48 bits
 
-1. **PC-1 (Permuted Choice 1):** Discard the 8 parity bits (bit positions 8, 16, 24, 32, 40, 48, 56, 64). Rearrange the remaining 56 bits. Split into:
-   - $C_0$ = first 28 bits
-   - $D_0$ = last 28 bits
+1. **PC-1 (Permuted Choice 1):** Discard the 8 parity bits (positions 8, 16, 24, 32, 40, 48, 56, 64) and rearrange the remaining 56 bits into two 28-bit halves $C_0$ and $D_0$.
 
 2. **For each round $i = 1, \ldots, 16$:**
    - Apply a **circular left-shift** of $s_i$ bits to both $C_{i-1}$ and $D_{i-1}$:
@@ -541,9 +935,576 @@ DES derives sixteen 48-bit subkeys $K_1, \ldots, K_{16}$ from the 64-bit master 
 3. **Decryption:** apply subkeys in **reverse order** $K_{16}, K_{15}, \ldots, K_1$.
 ```
 
+```{admonition} What are parity bits and why are they discarded?
+:class: note
+**Purpose.** In the 1970s, keys were transmitted over unreliable hardware. Each byte of the 64-bit DES key has its 8th bit set so that the total number of 1s in that byte is **odd** (odd parity). This lets the receiving hardware detect a single-bit transmission error: if any byte ends up with an even number of 1s, something went wrong.
+
+**Which bits.** Bit positions **8, 16, 24, 32, 40, 48, 56, 64** — the last bit of every byte — are the parity bits. The other 56 bits (positions 1–7, 9–15, 17–23, …) carry the actual key material.
+
+**How to compute a parity bit.** For byte $j$ (bits $8j{-}7$ through $8j{-}1$ are the data bits), the parity bit is chosen so that:
+
+$$b_{8j-7} \oplus b_{8j-6} \oplus b_{8j-5} \oplus b_{8j-4} \oplus b_{8j-3} \oplus b_{8j-2} \oplus b_{8j-1} \oplus p_j = 1$$
+
+i.e. $p_j = 1 \oplus b_{8j-7} \oplus \cdots \oplus b_{8j-1}$ (XOR of the 7 data bits, flipped if needed to make the total odd). The key point is: **DES only uses 56 of the 64 bits for cryptography**; the parity bits add no entropy and are simply dropped by PC-1.
+```
+
+```{admonition} What is a circular left-shift?
+:class: note
+A **circular left-shift** (also called a *rotation*) moves every bit one position to the left, and the bit that falls off the left end **wraps around** to the rightmost position — nothing is lost. For a 28-bit half $C = b_1 b_2 \ldots b_{28}$, a 1-bit circular left-shift gives $C' = b_2 b_3 \ldots b_{28} b_1$. A 2-bit shift gives $C' = b_3 b_4 \ldots b_{28} b_1 b_2$. Because the total shift across all 16 rounds sums to exactly 28, the halves return to their original state after the full key schedule ($C_{16} = C_0$, $D_{16} = D_0$).
+```
+
+#### PC-1 Table — From 64 to 56 Bits
+
+PC-1 is a **compression permutation**: it simultaneously drops all 8 parity bits and reorders the remaining 56 bits. Each cell contains the **input bit position** (from the 64-bit master key) that maps to that output position (read left-to-right, top-to-bottom for output bits 1 through 56):
+
+Each cell is the **input** key bit number routed to that output position. Read left-to-right, top-to-bottom for output bits 1 → 56. Parity bit positions (8, 16, 24, 32, 40, 48, 56, 64) never appear — they are silently dropped.
+
+| Output bits       | 1st | 2nd | 3rd | 4th | 5th | 6th | 7th |
+|:-----------------:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **C₀: 1 – 7**    |  57 |  49 |  41 |  33 |  25 |  17 |   9 |
+| **C₀: 8 – 14**   |   1 |  58 |  50 |  42 |  34 |  26 |  18 |
+| **C₀: 15 – 21**  |  10 |   2 |  59 |  51 |  43 |  35 |  27 |
+| **C₀: 22 – 28**  |  19 |  11 |   3 |  60 |  52 |  44 |  36 |
+| **D₀: 29 – 35**  |  63 |  55 |  47 |  39 |  31 |  23 |  15 |
+| **D₀: 36 – 42**  |   7 |  62 |  54 |  46 |  38 |  30 |  22 |
+| **D₀: 43 – 49**  |  14 |   6 |  61 |  53 |  45 |  37 |  29 |
+| **D₀: 50 – 56**  |  21 |  13 |   5 |  28 |  20 |  12 |   4 |
+
+**How to read:** Row "C₀: 1 – 7", 1st column → output bit 1 of $C_0$ takes input bit **57**. 2nd column → output bit 2 takes input bit **49**, and so on.
+
+```{admonition} Worked Example — Key Schedule on master key AABB09182736CCDD
+:class: seealso
+
+> **Master key:** `AABB09182736CCDD` (hex)
+
+---
+
+**Step 1 — Convert hex key to binary and label bits 1 through 64**
+
+| Bit positions | 1–8 | 9–16 | 17–24 | 25–32 | 33–40 | 41–48 | 49–56 | 57–64 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Hex byte | `AA` | `BB` | `09` | `18` | `27` | `36` | `CC` | `DD` |
+| Binary | `1010 1010` | `1011 1011` | `0000 1001` | `0001 1000` | `0010 0111` | `0011 0110` | `1100 1100` | `1101 1101` |
+
+---
+
+**Step 2 — Apply PC-1: drop parity bits, permute the remaining 56 bits, split into C₀ and D₀**
+
+PC-1 row 1 selects positions 57, 49, 41, 33, 25, 17, 9 → those key bits become $C_0$ bits 1–7:
+
+| $C_0$ output bit | From input bit | Bit value |
+|:----------------:|:--------------:|:---------:|
+| 1 | 57 (byte 8 `DD`, bit 1) | **1** |
+| 2 | 49 (byte 7 `CC`, bit 1) | **1** |
+| 3 | 41 (byte 6 `36`, bit 1) | **0** |
+| 4 | 33 (byte 5 `27`, bit 1) | **0** |
+| 5 | 25 (byte 4 `18`, bit 1) | **0** |
+| 6 | 17 (byte 3 `09`, bit 1) | **0** |
+| 7 |  9 (byte 2 `BB`, bit 1) | **1** |
+
+Applying all 8 rows of PC-1 to all 56 selected bits gives:
+
+$$C_0 = \mathtt{1111000\;1100110\;0101010\;1011101} \quad\text{(28 bits)}$$
+$$D_0 = \mathtt{0101010\;1011001\;1001111\;0001111} \quad\text{(28 bits)}$$
+
+---
+
+**Step 3 — Round 1: circular-left-shift both halves by 1 bit, then apply PC-2**
+
+Shift schedule says round 1 → **LS-1** (shift by 1):
+
+$$C_1 = \text{LS-1}(C_0): \text{bit 1 wraps to position 28}$$
+$$D_1 = \text{LS-1}(D_0): \text{bit 1 wraps to position 28}$$
+
+PC-2 then picks 48 of the 56 bits from $C_1 \| D_1$:
+
+$$\boxed{K_1 = \mathtt{194C D072 DE8C}}$$
+
+---
+
+**Step 4 — Repeat for rounds 2–16 with the appropriate shift amount**
+
+| Round | Shift | Cumulative shift |
+|:-----:|:-----:|:----------------:|
+| 1 | 1 | 1 |
+| 2 | 1 | 2 |
+| 3–8 | 2 each | 14 |
+| 9 | 1 | 15 |
+| 10–15 | 2 each | 27 |
+| 16 | 1 | **28** |
+
+After round 16, both halves have rotated a full 28 positions → $C_{16} = C_0$, $D_{16} = D_0$. Decryption applies the same schedule but uses $K_{16}, K_{15}, \ldots, K_1$ in reverse order.
+```
+
+```{admonition} S-DES Analogy — Key Schedule on 10 bits
+:class: seealso
+
+S-DES applies the **same three-stage structure** at toy scale:
+
+| Stage | S-DES | Full DES |
+|:---:|:---|:---|
+| **Initial permutation** | **P10** permutes all 10 key bits | **PC-1** permutes 64 bits, drops 8 parity bits, keeps 56 |
+| **Split** | $C_0$ = left 5 bits, $D_0$ = right 5 bits | $C_0$ = left 28 bits, $D_0$ = right 28 bits |
+| **Per-round shift** | Round 1 → LS-1; Rounds 2–3 → LS-2 | Rounds 1,2,9,16 → LS-1; others → LS-2 |
+| **Extract subkey** | **P8** selects 8 of 10 bits from $C_i\|D_i$ | **PC-2** selects 48 of 56 bits from $C_i\|D_i$ |
+| **Subkey size** | 8 bits | 48 bits |
+| **Number of subkeys** | 2 ($K_1$, $K_2$) | 16 ($K_1 \ldots K_{16}$) |
+
+The complete S-DES key schedule worked example is in **§4.3.2**.
+```
+
+#### 4.3.1 Binary Key Schedule — Three Standalone Examples
+
+Each example below is **self-contained**: it starts from the master key, applies PC-1 to get $C_0$ and $D_0$, shifts the halves, then applies PC-2 to produce the subkey. Work through them step by step with a pencil.
+
+**What you need to solve each example:**
+
+| Tool | What it does |
+|:---|:---|
+| **PC-1 table** | Tells you which 56 of the 64 key bits to keep, and their new order. Read it like a map: cell value = input bit position, cell location = output position. |
+| **Shift schedule** | Rounds 1, 2, 9, 16 → shift by **1**. All other rounds → shift by **2**. |
+| **PC-2 table** | Selects 48 of the 56 bits from $C_i \| D_i$ to form the subkey $K_i$. |
+| **Circular shift rule** | The bit(s) that fall off the left wrap to the right end — nothing is lost. |
+
+---
+
+`````{admonition} Example 1 — Master key 0000000100100011 0100010101100111 1000100110101011 1100110111101111
+:class: tip
+
+**Given master key (64 bits, written in binary, bits 1–64 left to right):**
+
+```
+Bit:  1        8  9       16 17      24 25      32
+      0000 0001  0010 0011  0100 0101  0110 0111
+Bit: 33       40 41      48 49      56 57      64
+      1000 1001  1010 1011  1100 1101  1110 1111
+```
+
+This is the hex key `0123456789ABCDEF`.
+
+
+
+**Step 1 — Apply PC-1: pick 56 bits, drop parity bits (positions 8,16,24,32,40,48,56,64)**
+
+PC-1 selects these 56 positions (in this order):
+
+$C_0$ (positions): 57 49 41 33 25 17 9 | 1 58 50 42 34 26 18 | 10 2 59 51 43 35 27 | 19 11 3 60 52 44 36
+
+$D_0$ (positions): 63 55 47 39 31 23 15 | 7 62 54 46 38 30 22 | 14 6 61 53 45 37 29 | 21 13 5 28 20 12 4
+
+Reading bit values from the master key above:
+
+| $C_0$ bit | Src pos | Key bit | | $D_0$ bit | Src pos | Key bit |
+|:---------:|:-------:|:-------:|-|:---------:|:-------:|:-------:|
+| 1 | 57 | **1** | | 1 | 63 | **1** |
+| 2 | 49 | **1** | | 2 | 55 | **1** |
+| 3 | 41 | **1** | | 3 | 47 | **1** |
+| 4 | 33 | **1** | | 4 | 39 | **1** |
+| 5 | 25 | **0** | | 5 | 31 | **0** |
+| 6 | 17 | **0** | | 6 | 23 | **0** |
+| 7 | 9  | **0** | | 7 | 15 | **0** |
+| 8 | 1  | **0** | | 8 | 7  | **1** |
+| 9 | 58 | **1** | | 9 | 62 | **1** |
+| 10 | 50 | **1** | | 10 | 54 | **1** |
+| 11 | 42 | **1** | | 11 | 46 | **1** |
+| 12 | 34 | **1** | | 12 | 38 | **1** |
+| 13 | 26 | **0** | | 13 | 30 | **0** |
+| 14 | 18 | **1** | | 14 | 22 | **0** |
+| 15 | 10 | **0** | | 15 | 14 | **0** |
+| 16 | 2  | **0** | | 16 | 6  | **1** |
+| 17 | 59 | **1** | | 17 | 61 | **1** |
+| 18 | 51 | **1** | | 18 | 53 | **1** |
+| 19 | 43 | **1** | | 19 | 45 | **0** |
+| 20 | 35 | **0** | | 20 | 37 | **1** |
+| 21 | 27 | **1** | | 21 | 29 | **0** |
+| 22 | 19 | **0** | | 22 | 21 | **0** |
+| 23 | 11 | **0** | | 23 | 13 | **0** |
+| 24 | 3  | **0** | | 24 | 5  | **1** |
+| 25 | 60 | **1** | | 25 | 28 | **0** |
+| 26 | 52 | **1** | | 26 | 20 | **1** |
+| 27 | 44 | **0** | | 27 | 12 | **0** |
+| 28 | 36 | **1** | | 28 | 4  | **0** |
+
+$$C_0 = \mathtt{1111\,0000\,1111\,0010\,1110\,0001\,1001}$$
+$$D_0 = \mathtt{1111\,0001\,1110\,0110\,1000\,1011\,0100}$$
+
+
+
+**Step 2 (Round 1) — Circular left-shift by 1 bit:**
+
+$$C_1 = \mathtt{1110\,0001\,1110\,0101\,1100\,0011\,0011} \quad\text{(leftmost bit 1 moves to position 28)}$$
+$$D_1 = \mathtt{1110\,0011\,1100\,1101\,0001\,0110\,1001}$$
+
+
+
+**Step 3 (Round 1) — Apply PC-2: select 48 of the 56 bits of $C_1 \| D_1$:**
+
+PC-2 positions (from combined 56-bit string $C_1\|D_1$, where $C_1$ = positions 1–28, $D_1$ = positions 29–56):
+
+`14 17 11 24 1 5 | 3 28 15 6 21 10 | 23 19 12 4 26 8 | 16 7 27 20 13 2`
+`41 52 31 37 47 55 | 30 40 51 45 33 48 | 44 49 39 56 34 53 | 46 42 50 36 29 32`
+
+$$\boxed{K_1 = \mathtt{0001\,1011\,0000\,0010\,0110\,0111\,1001\,1011\,0100\,1001\,1010\,0101} = \mathtt{1B02674B94A5}}$$
+`````
+
+---
+
+`````{admonition} Example 2 — Master key 1111111111111111 1111111111111111 1111111111111111 1111111111111111
+:class: tip
+
+**Given master key:** All 64 bits = `1` (hex `FFFFFFFFFFFFFFFF`).
+
+
+
+**Step 1 — Apply PC-1 (drop parity bits, select 56):**
+
+Every selected bit is `1`, so:
+
+$$C_0 = \mathtt{1111\,1111\,1111\,1111\,1111\,1111\,1111} \quad\text{(28 ones)}$$
+$$D_0 = \mathtt{1111\,1111\,1111\,1111\,1111\,1111\,1111} \quad\text{(28 ones)}$$
+
+
+
+**Step 2 (Round 1) — Circular left-shift by 1 bit:**
+
+All bits are 1, so rotating changes nothing:
+
+$$C_1 = \mathtt{1111\,1111\,1111\,1111\,1111\,1111\,1111}$$
+$$D_1 = \mathtt{1111\,1111\,1111\,1111\,1111\,1111\,1111}$$
+
+
+
+**Step 3 (Round 1) — Apply PC-2:**
+
+Every selected bit is `1`, so:
+
+$$\boxed{K_1 = \mathtt{1111\,1111\,1111\,1111\,1111\,1111\,1111\,1111\,1111\,1111\,1111\,1111} = \mathtt{FFFFFFFFFFFF}}$$
+
+**Round 2 — Shift by 1 again:** still all 1s → $K_2 = \mathtt{FFFFFFFFFFFF}$
+
+**Round 3 — Shift by 2:** still all 1s → $K_3 = \mathtt{FFFFFFFFFFFF}$
+
+> **Insight:** An all-ones key produces identical subkeys for every round — demonstrating why key diversity matters. In practice DES avoids "weak keys" like this.
+`````
+
+---
+
+`````{admonition} Example 3 — Master key 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+:class: tip
+
+**Given master key:** All 64 bits = `0` (hex `0000000000000000`).
+
+
+
+**Step 1 — Apply PC-1:**
+
+Every selected bit is `0`:
+
+$$C_0 = \mathtt{0000\,0000\,0000\,0000\,0000\,0000\,0000}$$
+$$D_0 = \mathtt{0000\,0000\,0000\,0000\,0000\,0000\,0000}$$
+
+
+
+**Step 2 (Round 1) — Circular left-shift by 1 bit:**
+
+Rotating all zeros gives all zeros:
+
+$$C_1 = \mathtt{0000\,0000\,0000\,0000\,0000\,0000\,0000}$$
+$$D_1 = \mathtt{0000\,0000\,0000\,0000\,0000\,0000\,0000}$$
+
+
+
+**Step 3 (Round 1) — Apply PC-2:**
+
+Every selected bit is `0`:
+
+$$\boxed{K_1 = \mathtt{0000\,0000\,0000\,0000\,0000\,0000\,0000\,0000\,0000\,0000\,0000\,0000} = \mathtt{000000000000}}$$
+
+**Round 2 and Round 3:** identical — all-zero subkeys for every round.
+
+> **Insight:** An all-zeros key is equally dangerous — it is another DES **weak key**. All 16 subkeys are identical. DES has exactly 4 weak keys; cryptographic libraries reject them automatically.
+`````
+
+---
+
+#### 4.3.2 Simplified DES (S-DES) Key Schedule — 10-Bit Master Key
+
+**Simplified DES** is a teaching cipher that mirrors the full DES key schedule but operates on a **10-bit master key** and produces **8-bit subkeys**. Understanding S-DES first makes the full 64-bit DES key schedule much easier to follow.
+
+**S-DES key schedule parameters:**
+
+| Item | Value |
+|:---|:---|
+| Master key | 10 bits, labelled $k_1 k_2 \ldots k_{10}$ (left = most significant) |
+| **P10** | Initial permutation of all 10 key bits |
+| **Split** | Left half $C_0$ = bits 1–5; Right half $D_0$ = bits 6–10 |
+| **Shift schedule** | Round 1 → LS-1 (rotate left by **1**); Rounds 2, 3 → LS-2 (rotate left by **2**) |
+| **P8** | Selects 8 of the 10 bits from $C_i \| D_i$ to form each 8-bit subkey |
+
+**Fixed permutation tables used in every S-DES example:**
+
+$$\text{P10:} \quad [3,\ 5,\ 2,\ 7,\ 4,\ 10,\ 1,\ 9,\ 8,\ 6]$$
+
+Read as: output bit 1 = input bit 3, output bit 2 = input bit 5, …, output bit 10 = input bit 6.
+
+$$\text{P8:} \quad [6,\ 3,\ 7,\ 4,\ 8,\ 5,\ 10,\ 9]$$
+
+Read as: output bit 1 = position 6 of $C_i\|D_i$, output bit 2 = position 3, …, output bit 8 = position 9.
+
+**Circular left-shift reminder:** For a 5-bit register $b_1 b_2 b_3 b_4 b_5$,
+- LS-1 gives $b_2 b_3 b_4 b_5 b_1$
+- LS-2 gives $b_3 b_4 b_5 b_1 b_2$
+
+Nothing is discarded — bits wrap around from the left end to the right end.
+
+**How $C$ and $D$ fit into the full S-DES key schedule:**
+
+```{figure} ../figures/ch08/sdes_key_schedule.svg
+:name: fig-sdes-key-schedule
+:width: 85%
+:align: center
+
+**S-DES Key Schedule.** The 10-bit master key is permuted by P10 and split into left half $C_0$ (bits 1–5) and right half $D_0$ (bits 6–10). Each half is independently rotated by the shift schedule (LS-1 for round 1, LS-2 for rounds 2 and 3). After each shift, the two halves are concatenated as $C_i \| D_i$ and P8 selects 8 of the 10 bits to form the subkey $K_i$.
+```
+
+```{admonition} $C$ and $D$ — Why two separate halves?
+:class: note
+
+After P10 the 10 permuted bits are cut exactly in the middle:
+
+$$\underbrace{b_1\ b_2\ b_3\ b_4\ b_5}_{C_i\ \text{(left 5 bits)}}\ \Big|\ \underbrace{b_6\ b_7\ b_8\ b_9\ b_{10}}_{D_i\ \text{(right 5 bits)}}$$
+
+Each half **rotates independently** — $C_i$ wraps only within its own 5-bit window, and so does $D_i$. This keeps the two halves from influencing each other during shifting, which is what produces a *different* key mixture each round.
+
+Only at the very end of each round are they **joined back** ($C_i \| D_i$, giving a 10-bit string) so that P8 can pick any 8 of those 10 positions to form the subkey.
+
+| Symbol | Meaning | Width |
+|:---:|:---|:---:|
+| $C_0$ | Left half of key bits **before** any round | 5 bits |
+| $D_0$ | Right half of key bits **before** any round | 5 bits |
+| $C_i$ | Left half **after** round $i$'s shift | 5 bits |
+| $D_i$ | Right half **after** round $i$'s shift | 5 bits |
+| $C_i \| D_i$ | Concatenation fed into P8 | 10 bits |
+| $K_i$ | Subkey output of P8 for round $i$ | 8 bits |
+
+The same $C/D$ naming convention appears in full DES, where each half is **28 bits** wide.
+```
+
+---
+
+`````{admonition} Example 4 — S-DES Worked Example: master key 1010000010, find $K_1$, $K_2$, $K_3$
+:class: tip
+
+**Given master key (10 bits, positions 1–10 left to right):**
+
+$$k = \mathtt{1010000010}$$
+
+| Pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Bit | **1** | **0** | **1** | **0** | **0** | **0** | **0** | **0** | **1** | **0** |
+
+
+
+**Step 1 — Apply P10: reorder all 10 key bits**
+
+P10 = $[3,5,2,7,4,10,1,9,8,6]$
+
+| Output pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 3 | 5 | 2 | 7 | 4 | 10 | 1 | 9 | 8 | 6 |
+| Bit value | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 |
+
+After P10: $\mathtt{1000001100}$
+
+$$C_0 = \mathtt{10000} \qquad D_0 = \mathtt{01100}$$
+
+
+
+**Step 2 (Round 1) — LS-1: rotate each half left by 1**
+
+$$C_1 = \text{LS-1}(\mathtt{10000}) = \mathtt{00001} \quad \text{(the leading 1 wraps to position 5)}$$
+$$D_1 = \text{LS-1}(\mathtt{01100}) = \mathtt{11000} \quad \text{(the leading 0 wraps to position 5)}$$
+
+Combined: $C_1 \| D_1 = \mathtt{0000111000}$
+
+| Pos in $C_1\|D_1$ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Bit | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | 0 |
+
+Apply P8 = $[6,3,7,4,8,5,10,9]$:
+
+| $K_1$ bit | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 6 | 3 | 7 | 4 | 8 | 5 | 10 | 9 |
+| Bit value | 1 | 0 | 1 | 0 | 0 | 1 | 0 | 0 |
+
+$$\boxed{K_1 = \mathtt{10100100}}$$
+
+
+
+**Step 3 (Round 2) — LS-2: rotate $C_1$, $D_1$ left by 2**
+
+$$C_2 = \text{LS-2}(\mathtt{00001}) = \mathtt{00100} \quad \text{(bits } b_3 b_4 b_5 b_1 b_2 \text{)}$$
+$$D_2 = \text{LS-2}(\mathtt{11000}) = \mathtt{00011}$$
+
+Combined: $C_2 \| D_2 = \mathtt{0010000011}$
+
+| Pos in $C_2\|D_2$ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Bit | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 1 |
+
+Apply P8 = $[6,3,7,4,8,5,10,9]$:
+
+| $K_2$ bit | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 6 | 3 | 7 | 4 | 8 | 5 | 10 | 9 |
+| Bit value | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 1 |
+
+$$\boxed{K_2 = \mathtt{01000011}}$$
+
+
+
+**Step 4 (Round 3) — LS-2: rotate $C_2$, $D_2$ left by 2**
+
+$$C_3 = \text{LS-2}(\mathtt{00100}) = \mathtt{10000}$$
+$$D_3 = \text{LS-2}(\mathtt{00011}) = \mathtt{01100}$$
+
+Combined: $C_3 \| D_3 = \mathtt{1000001100}$
+
+| Pos in $C_3\|D_3$ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Bit | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 |
+
+Apply P8 = $[6,3,7,4,8,5,10,9]$:
+
+| $K_3$ bit | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 6 | 3 | 7 | 4 | 8 | 5 | 10 | 9 |
+| Bit value | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 |
+
+$$\boxed{K_3 = \mathtt{00101000}}$$
+
+
+
+**Summary:**
+
+| Subkey | 8-bit value | C half before P8 | D half before P8 |
+|:---:|:---:|:---:|:---:|
+| $K_1$ | $\mathtt{10100100}$ | $C_1 = \mathtt{00001}$ | $D_1 = \mathtt{11000}$ |
+| $K_2$ | $\mathtt{01000011}$ | $C_2 = \mathtt{00100}$ | $D_2 = \mathtt{00011}$ |
+| $K_3$ | $\mathtt{00101000}$ | $C_3 = \mathtt{10000}$ | $D_3 = \mathtt{01100}$ |
+
+> **Observation:** After round 3 the halves have returned to $C_0, D_0$ (total rotation = $1+2+2 = 5$ bits, and the register width is 5 bits — a full cycle). This mirrors the full DES property where $C_{16} = C_0$.
+`````
+
+---
+
+`````{admonition} Practice Problem — S-DES Key Schedule: find $K_1$, $K_2$, $K_3$
+:class: seealso
+
+**Given master key (10 bits):**
+
+$$k = \mathtt{1100011010}$$
+
+**Permutation tables (same as the worked example):**
+
+$$\text{P10} = [3,5,2,7,4,10,1,9,8,6] \qquad \text{P8} = [6,3,7,4,8,5,10,9]$$
+
+**Shift schedule:** Round 1 → LS-1, Rounds 2 & 3 → LS-2.
+
+Using the four-step procedure above, find $K_1$, $K_2$, and $K_3$.
+
+```{admonition} Solution
+:class: dropdown
+
+**Step 1 — Apply P10 to master key $\mathtt{1100011010}$:**
+
+Key bits: pos 1=1, 2=1, 3=0, 4=0, 5=0, 6=1, 7=1, 8=0, 9=1, 10=0
+
+P10 = $[3,5,2,7,4,10,1,9,8,6]$ → reads out bits: 0, 0, 1, 1, 0, 0, 1, 1, 0, 1
+
+After P10: $\mathtt{0011001101}$
+
+$$C_0 = \mathtt{00110} \qquad D_0 = \mathtt{01101}$$
+
+
+
+**Round 1 — LS-1:**
+
+$$C_1 = \text{LS-1}(\mathtt{00110}) = \mathtt{01100}$$
+$$D_1 = \text{LS-1}(\mathtt{01101}) = \mathtt{11010}$$
+
+$C_1\|D_1 = \mathtt{0110011010}$ (pos: 1=0, 2=1, 3=1, 4=0, 5=0, 6=1, 7=1, 8=0, 9=1, 10=0)
+
+P8 $[6,3,7,4,8,5,10,9]$: picks bits at positions 6,3,7,4,8,5,10,9 → 1, 1, 1, 0, 0, 0, 0, 1
+
+$$\boxed{K_1 = \mathtt{11100001}}$$
+
+
+
+**Round 2 — LS-2 from $C_1, D_1$:**
+
+$$C_2 = \text{LS-2}(\mathtt{01100}) = \mathtt{10001}$$
+$$D_2 = \text{LS-2}(\mathtt{11010}) = \mathtt{01011}$$
+
+$C_2\|D_2 = \mathtt{1000101011}$ (pos: 1=1, 2=0, 3=0, 4=0, 5=1, 6=0, 7=1, 8=0, 9=1, 10=1)
+
+P8 $[6,3,7,4,8,5,10,9]$: picks 0, 0, 1, 0, 0, 1, 1, 1
+
+$$\boxed{K_2 = \mathtt{00100111}}$$
+
+
+
+**Round 3 — LS-2 from $C_2, D_2$:**
+
+$$C_3 = \text{LS-2}(\mathtt{10001}) = \mathtt{00110}$$
+$$D_3 = \text{LS-2}(\mathtt{01011}) = \mathtt{01101}$$
+
+$C_3\|D_3 = \mathtt{0011001101}$ (pos: 1=0, 2=0, 3=1, 4=1, 5=0, 6=0, 7=1, 8=1, 9=0, 10=1)
+
+P8 $[6,3,7,4,8,5,10,9]$: picks 0, 1, 1, 1, 1, 0, 1, 0
+
+$$\boxed{K_3 = \mathtt{01111010}}$$
+
+
+
+**Final answer:**
+
+| Subkey | Value |
+|:---:|:---:|
+| $K_1$ | $\mathtt{11100001}$ |
+| $K_2$ | $\mathtt{00100111}$ |
+| $K_3$ | $\mathtt{01111010}$ |
+```
+`````
+
 ---
 
 ### 4.4 Step 3 — The Feistel Round Function (Mangler)
+
+```{admonition} S-DES Analogy — Round Function on 4-bit halves
+:class: seealso
+
+The S-DES round function uses the same four sub-steps as DES but on toy-sized data:
+
+| Sub-step | S-DES | Full DES |
+|:---:|:---|:---|
+| **① Expand** | **EP**: $R$ (4 bits) → 8 bits via $[4,1,2,3,2,3,4,1]$ | **E-box**: $R$ (32 bits) → 48 bits |
+| **② XOR key** | 8-bit EP output ⊕ 8-bit subkey | 48-bit expansion ⊕ 48-bit subkey |
+| **③ Substitute** | Left 4 bits → **S0** (→ 2 bits); Right 4 bits → **S1** (→ 2 bits); combine → 4 bits | Eight 6-bit chunks → **S1–S8** (4 bits each); combine → 32 bits |
+| **④ Permute** | **P4**: permute 4 bits with $[2,4,3,1]$ | **P32**: permute 32 bits with fixed table |
+
+**S-DES S0 and S1 tables** (row = outer bits $b_1 b_4$, col = inner bits $b_2 b_3$; values in decimal → convert to 2-bit binary):
+
+| Row \ Col | **S0** 00 | **S0** 01 | **S0** 10 | **S0** 11 | | **S1** 00 | **S1** 01 | **S1** 10 | **S1** 11 |
+|:---:|:---:|:---:|:---:|:---:|-|:---:|:---:|:---:|:---:|
+| **00** | 1 | 0 | 3 | 2 | | 0 | 1 | 2 | 3 |
+| **01** | 3 | 2 | 1 | 0 | | 2 | 0 | 1 | 3 |
+| **10** | 0 | 2 | 1 | 3 | | 3 | 0 | 1 | 0 |
+| **11** | 3 | 1 | 3 | 2 | | 2 | 1 | 0 | 3 |
+
+**S-DES S-box indexing rule:** for a 4-bit input $b_1 b_2 b_3 b_4$: $\text{row} = (b_1 b_4)_2$, $\text{col} = (b_2 b_3)_2$.
+```
 
 The round function $F(R_{i-1}, K_i)$ transforms the 32-bit right half using four internal steps:
 
@@ -587,14 +1548,46 @@ $$\text{row} = (b_1 \, b_6)_2, \qquad \text{col} = (b_2 \, b_3 \, b_4 \, b_5)_2$
 - **Column (0–15):** the four *inner* bits $b_2 b_3 b_4 b_5$, read as a 4-bit integer
 - **Output:** 4-bit value at S$_j$[row][col]
 
+**DES S-box S1 — the full 4 × 16 lookup table (values are decimal, each represents 4 bits):**
+
+| Row \ Col | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **0** | 14 | 4 | 13 | 1 | 2 | 15 | 11 | 8 | 3 | 10 | 6 | 12 | 5 | 9 | 0 | 7 |
+| **1** | 0 | 15 | 7 | 4 | 14 | 2 | 13 | 1 | 10 | 6 | 12 | 11 | 9 | 5 | 3 | 8 |
+| **2** | 4 | 1 | 14 | 8 | 13 | 6 | 2 | 11 | 15 | 12 | 9 | 7 | 3 | 10 | 5 | 0 |
+| **3** | 15 | 12 | 8 | 2 | 4 | 9 | 1 | 7 | 5 | 11 | 3 | 14 | 10 | 0 | 6 | 13 |
+
 *Example using S1 and input* `101010`:
 
 | Outer bits $b_1 b_6$ | Inner bits $b_2 b_3 b_4 b_5$ | Row | Col | S1 value | 4-bit output |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| $\mathtt{1},\,\mathtt{0}$ | $\mathtt{0101}$ | 2 | 5 | 6 | `0110` |
+| $\mathtt{1},\,\mathtt{0}$ | $\mathtt{0101}$ | 2 | 5 | **6** | `0110` |
+
+*Reading from the table:* row 2, column 5 → value **6** → binary `0110`. ✓
 ```
 
 **④ P-box Permutation:** The concatenated 32-bit S-box output is rearranged by a fixed P-box table. This spreads each S-box's output bits across multiple S-box inputs in the **next** round, achieving **diffusion** across the block.
+
+```{admonition} Worked Example — Completing Round 1
+:class: tip
+
+Picking up from §4.2 ($L_0 = \mathtt{14A7D678}$, $R_0 = \mathtt{18CA18AD}$) and §4.3 ($K_1 = \mathtt{194CD072DE8C}$):
+
+| Sub-step | Input | Output |
+|:---|:---|:---:|
+| **① E-box** — expand $R_0$ from 32 to 48 bits | `18CA18AD` | 48-bit expanded block |
+| **② XOR** with $K_1$ — split into 8 × 6-bit chunks | $E(R_0) \oplus K_1$ | `101010` · `010001` · `011110` · `111010` · `100001` · `100110` · `010100` · `100111` |
+| **③ S-boxes** S1–S8, one chunk each | 8 × 6 bits in | 8 × 4 bits = 32-bit S-box result |
+| **④ P-box** — fixed 32-bit permutation | 32-bit S output | $F(R_0, K_1) = \mathtt{4EDF35EC}$ |
+
+Detail for the first chunk $c_1 = \mathtt{101010}$ entering **S1**: outer bits $b_1 b_6 = (1,0)_2 = 2$ → row 2; inner bits $b_2 b_3 b_4 b_5 = 0101_2 = 5$ → column 5; S1[2][5] = **6** → `0110`.
+
+**Feistel update — Round 1 output:**
+
+$$\boxed{L_1 = R_0 = \mathtt{18CA18AD}}$$
+
+$$\boxed{R_1 = L_0 \oplus F(R_0,\,K_1) = \mathtt{14A7D678} \oplus \mathtt{4EDF35EC} = \mathtt{5A78E394}}$$
+```
 
 ---
 
@@ -613,88 +1606,7 @@ Without the swap before IP⁻¹, the last round would be asymmetric and DES woul
 
 ---
 
-### 4.6 Solved Numerical Example — DES Round 1 Trace
-
-```{prf:example} DES Round 1: Detailed Step-by-Step Walkthrough
-:label: ex-des-round1
-
-We trace DES encryption through Round 1 using the FIPS reference values from GeeksforGeeks (DES Set 1).
-
-**Inputs (hex):**
-- Plaintext: `123456ABCD132536`
-- Key: `AABB09182736CCDD`
-
----
-
-**Phase 1 — Initial Permutation**
-
-Applying the IP table to rearrange all 64 plaintext bits:
-
-$$\mathtt{123456ABCD132536} \xrightarrow{\;\text{IP}\;} \mathtt{14A7D67818CA18AD}$$
-
-Split into two 32-bit halves:
-
-$$L_0 = \mathtt{14A7D678}, \qquad R_0 = \mathtt{18CA18AD}$$
-
----
-
-**Phase 2 — Key Schedule: Generating $K_1$**
-
-Starting from key `AABB09182736CCDD`:
-1. PC-1 drops the 8 parity bits → 56-bit key, split into $C_0$ (28 bits) and $D_0$ (28 bits).
-2. Round 1 uses a 1-bit circular left-shift on both halves → $C_1, D_1$.
-3. PC-2 selects and permutes 48 of the 56 bits:
-
-$$K_1 = \mathtt{194CD072DE8C} \quad (48\text{-bit subkey in hex})$$
-
----
-
-**Phase 3 — Round 1: Mangler Function $F(R_0, K_1)$**
-
-**Step ①: Expansion of $R_0$ (32 → 48 bits)**
-
-The E-box table expands $R_0 = \mathtt{18CA18AD}$ from 32 to 48 bits by duplicating 16 boundary bits. The expanded block is XORed with $K_1$.
-
-**Step ②: XOR with $K_1$**
-
-Writing the 48-bit result of $E(R_0) \oplus K_1$ as eight 6-bit chunks:
-
-$$E(R_0) \oplus K_1 = \underbrace{\mathtt{101010}}_{c_1}\;\underbrace{\mathtt{010001}}_{c_2}\;\underbrace{\mathtt{011110}}_{c_3}\;\underbrace{\mathtt{111010}}_{c_4}\;\underbrace{\mathtt{100001}}_{c_5}\;\underbrace{\mathtt{100110}}_{c_6}\;\underbrace{\mathtt{010100}}_{c_7}\;\underbrace{\mathtt{100111}}_{c_8}$$
-
-**Step ③: S-box Substitution — chunk $c_1$ in full detail**
-
-For $c_1 = \mathtt{101010}$ entering **S1**:
-
-| | Bits | Binary | Decimal |
-|:---:|:---:|:---:|:---:|
-| **Row** | outer bits $b_1 b_6 = \mathtt{1,\,0}$ | $\mathtt{10}$ | **2** |
-| **Col** | inner bits $b_2 b_3 b_4 b_5 = \mathtt{0101}$ | $\mathtt{0101}$ | **5** |
-| **S1[2][5]** | — | `0110` | **6** |
-
-$$c_1 = \mathtt{101010} \;\xrightarrow{\text{S1}}\; \mathtt{0110}$$
-
-Chunks $c_2$–$c_8$ are processed identically through S2–S8 respectively. Concatenating all eight 4-bit outputs produces the **32-bit S-box result**.
-
-**Step ④: P-box Permutation**
-
-The P-box rearranges the 32-bit S-box output according to its fixed table, spreading S-box outputs across S-box inputs in Round 2. Combined result:
-
-$$F(R_0, K_1) = L_0 \oplus R_1 = \mathtt{14A7D678} \oplus \mathtt{5A78E394} = \mathtt{4EDF35EC}$$
-
----
-
-**Phase 4 — Completing Round 1**
-
-Applying the Feistel update rule:
-
-$$L_1 = R_0 = \mathtt{18CA18AD}$$
-
-$$R_1 = L_0 \oplus F(R_0, K_1) = \mathtt{14A7D678} \oplus \mathtt{4EDF35EC} = \mathtt{5A78E394}$$
-
-**Round 1 output: $L_1 = \mathtt{18CA18AD}$, $R_1 = \mathtt{5A78E394}$** ✓
-
-Rounds 2–16 repeat this process with subkeys $K_2, \ldots, K_{16}$, followed by the 32-bit swap and IP⁻¹ to produce the 64-bit ciphertext.
-```
+### 4.6 Solved Examples — S-DES and Full DES
 
 ::::{question} DES S-box Lookup
 :type: multiple-choice
@@ -713,6 +1625,190 @@ A 6-bit input `011011` is fed into S-box **S1**. What are the row and column use
 > The column index uses the four *inner* bits $b_2 b_3 b_4 b_5 = 1101_2 = 13$, not only the lower nibble.
 ---
 ::::
+
+---
+
+### 4.6.1 Complete S-DES Worked Example — Full Encryption
+
+This example chains **all five steps** of S-DES into one end-to-end encryption. Fixed tables use the Stallings standard S-DES parameters from §4.3.2 and §4.4.
+
+**Given:**
+- Master key: $K = \mathtt{1010000010}$
+- Plaintext: $P = \mathtt{11010111}$
+- Subkeys (from §4.3.2): $K_1 = \mathtt{10100100}$, $K_2 = \mathtt{01000011}$
+- IP $= [2,6,3,1,4,8,5,7]$, IP⁻¹ $= [4,1,3,5,7,2,8,6]$, EP $= [4,1,2,3,2,3,4,1]$, P4 $= [2,4,3,1]$
+
+---
+
+`````{admonition} Step 1 — Apply IP to plaintext
+:class: tip
+
+$$P = \mathtt{1\ 1\ 0\ 1\ 0\ 1\ 1\ 1} \quad (\text{positions } 1\text{–}8)$$
+
+IP $= [2,6,3,1,4,8,5,7]$ picks bits at those positions:
+
+| Output pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 2 | 6 | 3 | 1 | 4 | 8 | 5 | 7 |
+| Bit value | **1** | **1** | **0** | **1** | **1** | **1** | **0** | **1** |
+
+$$\text{IP}(P) = \mathtt{11011101}$$
+
+$$\boxed{L_0 = \mathtt{1101} \qquad R_0 = \mathtt{1101}}$$
+`````
+
+---
+
+`````{admonition} Step 2 — Round 1: compute $F(R_0, K_1)$ then update halves
+:class: tip
+
+**① Expand $R_0 = \mathtt{1101}$ using EP $= [4,1,2,3,2,3,4,1]$:**
+
+| Output pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 4 | 1 | 2 | 3 | 2 | 3 | 4 | 1 |
+| Bit value | 1 | 1 | 1 | 0 | 1 | 0 | 1 | 1 |
+
+$$\text{EP}(R_0) = \mathtt{11101011}$$
+
+**② XOR with $K_1 = \mathtt{10100100}$:**
+
+$$\mathtt{11101011} \oplus \mathtt{10100100} = \mathtt{01001111}$$
+
+**③ S-box substitution — split into two 4-bit halves:**
+
+| Half | Bits | $b_1$ | $b_2$ | $b_3$ | $b_4$ | Row $(b_1 b_4)_2$ | Col $(b_2 b_3)_2$ | Table value | 2-bit output |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Left → S0 | $\mathtt{0100}$ | 0 | 1 | 0 | 0 | 00=0 | 10=2 | S0[0][2] = **3** | $\mathtt{11}$ |
+| Right → S1 | $\mathtt{1111}$ | 1 | 1 | 1 | 1 | 11=3 | 11=3 | S1[3][3] = **3** | $\mathtt{11}$ |
+
+Combined S-box output: $\mathtt{1111}$
+
+**④ Permute with P4 $= [2,4,3,1]$:**
+
+$$\text{P4}(\mathtt{1111}): \text{pos }1{\leftarrow}b_2{=}1,\ \text{pos }2{\leftarrow}b_4{=}1,\ \text{pos }3{\leftarrow}b_3{=}1,\ \text{pos }4{\leftarrow}b_1{=}1$$
+
+$$\boxed{F(R_0, K_1) = \mathtt{1111}}$$
+
+**Feistel update:**
+
+$$L_1 = R_0 = \mathtt{1101}$$
+$$R_1 = L_0 \oplus F(R_0, K_1) = \mathtt{1101} \oplus \mathtt{1111} = \mathtt{0010}$$
+`````
+
+---
+
+`````{admonition} Step 3 — Round 2: compute $F(R_1, K_2)$ then update halves
+:class: tip
+
+**① Expand $R_1 = \mathtt{0010}$ using EP $= [4,1,2,3,2,3,4,1]$:**
+
+| Output pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 4 | 1 | 2 | 3 | 2 | 3 | 4 | 1 |
+| Bit value | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 0 |
+
+$$\text{EP}(R_1) = \mathtt{00010100}$$
+
+**② XOR with $K_2 = \mathtt{01000011}$:**
+
+$$\mathtt{00010100} \oplus \mathtt{01000011} = \mathtt{01010111}$$
+
+**③ S-box substitution — split into two 4-bit halves:**
+
+| Half | Bits | $b_1$ | $b_2$ | $b_3$ | $b_4$ | Row $(b_1 b_4)_2$ | Col $(b_2 b_3)_2$ | Table value | 2-bit output |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Left → S0 | $\mathtt{0101}$ | 0 | 1 | 0 | 1 | 01=1 | 10=2 | S0[1][2] = **1** | $\mathtt{01}$ |
+| Right → S1 | $\mathtt{0111}$ | 0 | 1 | 1 | 1 | 01=1 | 11=3 | S1[1][3] = **3** | $\mathtt{11}$ |
+
+Combined S-box output: $\mathtt{0111}$
+
+**④ Permute with P4 $= [2,4,3,1]$:**
+
+$$\text{P4}(\mathtt{0111}): \text{pos }1{\leftarrow}b_2{=}1,\ \text{pos }2{\leftarrow}b_4{=}1,\ \text{pos }3{\leftarrow}b_3{=}1,\ \text{pos }4{\leftarrow}b_1{=}0$$
+
+$$\boxed{F(R_1, K_2) = \mathtt{1110}}$$
+
+**Feistel update:**
+
+$$L_2 = R_1 = \mathtt{0010}$$
+$$R_2 = L_1 \oplus F(R_1, K_2) = \mathtt{1101} \oplus \mathtt{1110} = \mathtt{0011}$$
+`````
+
+---
+
+`````{admonition} Step 4 — Swap halves then apply IP⁻¹
+:class: tip
+
+**Swap $L_2 \leftrightarrow R_2$:** concatenate $R_2 \| L_2 = \mathtt{0011\,0010}$
+
+**Apply IP⁻¹ $= [4,1,3,5,7,2,8,6]$** to $\mathtt{00110010}$:
+
+| Input pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Input bit | 0 | 0 | 1 | 1 | 0 | 0 | 1 | 0 |
+
+| Output pos | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Src pos | 4 | 1 | 3 | 5 | 7 | 2 | 8 | 6 |
+| Bit value | **1** | **0** | **1** | **0** | **1** | **0** | **0** | **0** |
+
+$$\boxed{\text{Ciphertext} = \mathtt{10101000}}$$
+`````
+
+---
+
+**Complete S-DES encryption trace — all steps at a glance:**
+
+| Step | Operation | Input | Output |
+|:---|:---:|:---:|:---:|
+| IP | Permute plaintext | $\mathtt{11010111}$ | $L_0{=}\mathtt{1101},\ R_0{=}\mathtt{1101}$ |
+| Rnd 1 EP | Expand $R_0$ | $\mathtt{1101}$ | $\mathtt{11101011}$ |
+| Rnd 1 XOR $K_1$ | Key mixing | $\cdot \oplus \mathtt{10100100}$ | $\mathtt{01001111}$ |
+| Rnd 1 S0+S1 | Substitute | $\mathtt{0100},\mathtt{1111}$ | $\mathtt{11,11}\to\mathtt{1111}$ |
+| Rnd 1 P4 | Permute | $\mathtt{1111}$ | $F{=}\mathtt{1111}$ |
+| Rnd 1 update | Feistel | $L_0,R_0$ | $L_1{=}\mathtt{1101},\ R_1{=}\mathtt{0010}$ |
+| Rnd 2 EP | Expand $R_1$ | $\mathtt{0010}$ | $\mathtt{00010100}$ |
+| Rnd 2 XOR $K_2$ | Key mixing | $\cdot \oplus \mathtt{01000011}$ | $\mathtt{01010111}$ |
+| Rnd 2 S0+S1 | Substitute | $\mathtt{0101},\mathtt{0111}$ | $\mathtt{01,11}\to\mathtt{0111}$ |
+| Rnd 2 P4 | Permute | $\mathtt{0111}$ | $F{=}\mathtt{1110}$ |
+| Rnd 2 update | Feistel | $L_1,R_1$ | $L_2{=}\mathtt{0010},\ R_2{=}\mathtt{0011}$ |
+| Swap | $R_2\|L_2$ | $L_2,R_2$ | $\mathtt{00110010}$ |
+| IP⁻¹ | Final permutation | $\mathtt{00110010}$ | $\mathtt{10101000}$ |
+
+> **Key:** $K{=}\mathtt{1010000010}$ · **Plaintext:** $\mathtt{11010111}$ · **Ciphertext:** $\boxed{\mathtt{10101000}}$
+
+---
+
+### 4.6.2 Full DES Round 1 — Numerical Trace (64-bit)
+
+The table below traces every intermediate value through **Round 1** of full DES on the running 64-bit example. Rounds 2–16 repeat identically with subkeys $K_2,\ldots,K_{16}$.
+
+**Given:** Plaintext `123456ABCD132536` (hex) · Key `AABB09182736CCDD` (hex)
+
+| Step | § | Operation | Value |
+|:-----|:-:|:----------|------:|
+| Input plaintext | — | given | `123456ABCD132536` |
+| After **IP** | 4.2 | 64-bit permutation | `14A7D67818CA18AD` |
+| $L_0$ (bits 1–32) | 4.2 | left split | `14A7D678` |
+| $R_0$ (bits 33–64) | 4.2 | right split | `18CA18AD` |
+| $K_1$ | 4.3 | PC-1 → 1-bit shift → PC-2 | `194CD072DE8C` |
+| $E(R_0) \oplus K_1$ | 4.4-② | expand then XOR | `101010 010001 011110 111010` / `100001 100110 010100 100111` |
+| $F(R_0, K_1)$ | 4.4-③④ | S-boxes S1–S8, then P-box | `4EDF35EC` |
+| $L_1 = R_0$ | 4.4 | Feistel left update | `18CA18AD` |
+| $R_1 = L_0 \oplus F$ | 4.4 | $\mathtt{14A7D678} \oplus \mathtt{4EDF35EC}$ | `5A78E394` |
+
+```{admonition} S-DES vs Full DES — same structure, different scale
+:class: note
+
+| | S-DES Round 1 (§4.6.1) | DES Round 1 (above) |
+|:---|:---:|:---:|
+| Block/half size | 8 / 4 bits | 64 / 32 bits |
+| Expansion output | 8 bits | 48 bits |
+| Subkey size | 8 bits | 48 bits |
+| S-boxes | S0 + S1 (2-bit out each) | S1–S8 (4-bit out each) |
+| Feistel formula | $L_1{=}R_0,\ R_1{=}L_0{\oplus}F$ | identical |
+```
 
 ---
 
@@ -1364,6 +2460,93 @@ except ImportError:
     print("  AES-256 key size:   32 bytes = 256 bits")
     print("  AES block size:     16 bytes = 128 bits (always)")
 ```
+
+---
+
+## 7. Advanced Attack Techniques
+
+Modern block ciphers are designed to resist the following families of attacks. Understanding them explains why DES was retired and why AES's S-boxes and MixColumns were designed the way they were.
+
+### 7.1 Differential Cryptanalysis
+
+```{prf:definition} Differential Cryptanalysis
+:label: def-differential
+
+Differential cryptanalysis (Biham & Shamir, 1990) is a **chosen-plaintext** technique that analyzes how differences $\Delta x = x \oplus x'$ in the input propagate through the cipher:
+
+$$\Delta y = \text{Enc}_k(x) \oplus \text{Enc}_k(x')$$
+
+By choosing pairs $(x, x')$ with a specific $\Delta x$ and observing $\Delta y$, an attacker gathers statistical information about the last-round subkey.
+```
+
+```{admonition} Differential Attack on DES
+:class: note
+DES was secretly *designed* with resistance to differential cryptanalysis built into its S-boxes — IBM knew about the technique in the 1970s but it was not published until 1990. A full 16-round DES attack requires $2^{47}$ chosen plaintexts.
+```
+
+### 7.2 Linear Cryptanalysis
+
+```{prf:definition} Linear Cryptanalysis
+:label: def-linear
+
+Linear cryptanalysis (Matsui, 1993) is a **known-plaintext** technique. It finds a linear approximation:
+
+$$m_{i_1} \oplus m_{i_2} \oplus \cdots \oplus c_{j_1} \oplus c_{j_2} \oplus \cdots = k_{l_1} \oplus k_{l_2} \oplus \cdots$$
+
+that holds with probability $\frac{1}{2} + \varepsilon$ for a non-trivial bias $\varepsilon$. Collecting $O(1/\varepsilon^2)$ plaintext–ciphertext pairs yields key bits with statistical significance.
+```
+
+### 7.3 Meet-in-the-Middle Attack
+
+```{prf:definition} Meet-in-the-Middle Attack
+:label: def-mitm
+
+For a double-encryption scheme $c = E_{k_2}(E_{k_1}(m))$, an adversary with one known plaintext–ciphertext pair $(m, c)$ can:
+
+1. Compute $E_{k_1}(m)$ for **all** $2^{|k_1|}$ values of $k_1$; store in a table.
+2. Compute $D_{k_2}(c)$ for **all** $2^{|k_2|}$ values of $k_2$.
+3. Find matching middle values — this gives the key pair $(k_1, k_2)$ in $O(2^{|k_1|} + 2^{|k_2|})$ time (not $O(2^{|k_1|+|k_2|})$).
+
+Double-DES has an effective security of only 57 bits (barely better than single DES), not 112 bits.
+```
+
+### 7.4 Side-Channel Attacks
+
+```{prf:definition} Side-Channel Attack
+:label: def-side-channel
+
+A side-channel attack exploits **physical information** leaked during computation rather than mathematical weaknesses in the cipher:
+
+- **Timing attacks** — execution time varies with key bits (Kocher, 1996)
+- **Power analysis (SPA/DPA)** — power consumption curves reveal key-dependent operations
+- **Electromagnetic (EM) attacks** — EM radiation from hardware leaks internal state
+- **Cache-timing attacks** — memory access patterns on shared hardware reveal secrets
+```
+
+```{admonition} Practical Relevance
+:class: warning
+Side-channel attacks are among the most practical threats to real implementations. Correct mathematical design is necessary but not sufficient — implementations must also be **constant-time** (no branching or memory access patterns that depend on secret data).
+```
+
+::::{question} Attack Classification
+:type: multiple-choice
+:variant: multiple-select
+:showanswer:
+
+Which of the following are examples of side-channel attacks? (Select all that apply.)
+---
+[x] Measuring the time taken by an RSA decryption operation to infer key bits
+> Correct! This is a classic timing attack (Kocher 1996), exploiting the key-dependent execution path in square-and-multiply exponentiation.
+[ ] Factoring the RSA modulus $n$ using the Number Field Sieve
+> This is a mathematical attack on the underlying hard problem, not a side channel.
+[x] Analysing power consumption spikes in a smartcard during AES encryption
+> Correct! This is a Differential Power Analysis (DPA) attack — a classic side-channel technique.
+[x] Exploiting cache timing to recover AES key bytes on a shared server
+> Correct! Cache-timing attacks (e.g., Flush+Reload) are a side-channel attack exploiting shared hardware state.
+[ ] Using differential cryptanalysis with $2^{47}$ chosen plaintexts on DES
+> Differential cryptanalysis is a mathematical, chosen-plaintext attack — not a side-channel attack.
+---
+::::
 
 ---
 

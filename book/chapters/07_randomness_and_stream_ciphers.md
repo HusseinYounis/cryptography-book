@@ -923,7 +923,7 @@ Where $\lll$ is a **left rotation** (not shift). The operations are add–XOR–
 - **Fully invertible** in the proof
 
 ```{mermaid}
-%%{init: {'themeVariables': {'fontSize': '12px', 'nodeSpacing': 30, 'rankSpacing': 30}}}%%
+%%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 30}, 'themeVariables': {'fontSize': '12px'}}}%%
 flowchart LR
     INPUT["a, b, c, d"]
     R1["① a+=b · d^=a · d&lt;&lt;&lt;16"]

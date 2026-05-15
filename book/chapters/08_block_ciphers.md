@@ -1592,6 +1592,19 @@ This example chains the same style of steps used by DES into one small end-to-en
 - Subkeys (from §4.3.2): $K_1 = \mathtt{10100100}$, $K_2 = \mathtt{01000011}$
 - IP $= [2,6,3,1,4,8,5,7]$, IP⁻¹ $= [4,1,3,5,7,2,8,6]$, EP $= [4,1,2,3,2,3,4,1]$, P4 $= [2,4,3,1]$
 
+```{admonition} Quick Reference — S0 and S1 Lookup Tables
+:class: note
+
+**Indexing rule:** for a 4-bit input $b_1 b_2 b_3 b_4$: row $= (b_1 b_4)_2$, col $= (b_2 b_3)_2$. Output is a decimal value — convert to 2-bit binary.
+
+| Row \ Col | **S0** 00 | **S0** 01 | **S0** 10 | **S0** 11 | | **S1** 00 | **S1** 01 | **S1** 10 | **S1** 11 |
+|:---:|:---:|:---:|:---:|:---:|-|:---:|:---:|:---:|:---:|
+| **00** | 1 | 0 | 3 | 2 | | 0 | 1 | 2 | 3 |
+| **01** | 3 | 2 | 1 | 0 | | 2 | 0 | 1 | 3 |
+| **10** | 0 | 2 | 1 | 3 | | 3 | 0 | 1 | 0 |
+| **11** | 3 | 1 | 3 | 2 | | 2 | 1 | 0 | 3 |
+```
+
 ---
 
 `````{admonition} Step 1 — Apply IP to plaintext
